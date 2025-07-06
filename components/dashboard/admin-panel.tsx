@@ -740,10 +740,7 @@ export function AdminPanel({ userData }: AdminPanelProps) {
                                     <div>
                                       <div className="flex items-center gap-2">
                                         <h3 className="text-white font-semibold text-lg">
-                                          {participant.is_team_registration
-                                            ? participant.team_members?.find((m) => m.role === "leader")?.full_name ||
-                                              "Tim"
-                                            : participant.users?.full_name}
+                                          {participant.users?.full_name}
                                         </h3>
                                         <Badge
                                           className={

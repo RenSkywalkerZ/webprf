@@ -423,6 +423,13 @@ export function TeamRegistrationForm({
             {/* Navigation Buttons */}
             <div className="flex justify-between mt-8 pt-6 border-t border-slate-700">
               <Button
+                variant="ghost"
+                onClick={() => (window.location.href = "/dashboard")}
+                className="text-slate-400 hover:bg-slate-800 hover:text-slate-200"
+              >
+                Kembali ke Dashboard
+              </Button>
+              <Button
                 variant="outline"
                 onClick={handlePrevious}
                 disabled={currentStep === 0}

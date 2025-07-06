@@ -52,9 +52,9 @@ export function DashboardSidebar({ activeSection, onSectionChange, userData }: D
     },
     {
       id: "personal",
-      label: "Informasi Pribadi",
+      label: "Informasi Diri",
       icon: User,
-      description: "Kelola informasi pribadi Anda",
+      description: "Kelola informasi diri Anda",
     },
     {
       id: "registration",

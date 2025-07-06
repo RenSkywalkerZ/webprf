@@ -30,6 +30,7 @@ interface Registration {
   expires_at?: string
   payment_proof_url?: string
   is_team_registration?: boolean
+  team_data_complete?: boolean
 }
 
 interface CompetitionRegistrationProps {
@@ -403,15 +404,22 @@ export function CompetitionRegistration({ userData, onRegisterCompetition }: Com
     fetchData()
   }
 
+  // 2. Perbarui logika handleContinueRegistration
   const handleContinueRegistration = (competitionId: string, registration: Registration) => {
-    if (registration.is_team_registration) {
-      // Continue team registration
-      window.location.href = `/team-registration?competition=${competitionId}&batch=${currentBatchId || 1}&registration=${registration.id}`
+  // Jika ini pendaftaran tim...
+  if (registration.is_team_registration) {
+    // ...dan data tim BELUM LENGKAP, arahkan ke form pengisian data tim.
+    if (!registration.team_data_complete) {
+      window.location.href = `/team-registration?competition=${competitionId}&batch=${currentBatchId || 1}&registration=${registration.id}`;
     } else {
-      // Continue individual payment
-      window.location.href = `/payment?competition=${competitionId}&batch=${currentBatchId || 1}&registration=${registration.id}`
+      // ...tapi jika SUDAH LENGKAP, langsung arahkan ke pembayaran.
+      window.location.href = `/payment?competition=${competitionId}&batch=${currentBatchId || 1}&registration=${registration.id}`;
     }
+  } else {
+    // Jika bukan pendaftaran tim, langsung ke pembayaran (alur individu).
+    window.location.href = `/payment?competition=${competitionId}&batch=${currentBatchId || 1}&registration=${registration.id}`;
   }
+};
 
   if (isLoading) {
     return (
@@ -672,7 +680,7 @@ export function CompetitionRegistration({ userData, onRegisterCompetition }: Com
                                 ? "bg-red-600 hover:bg-red-700"
                                 : !canRegisterNewCompetition() || !currentBatchId || registrationClosed
                                   ? "bg-slate-600 cursor-not-allowed"
-                                  : `bg-gradient-to-r ${competition.color || "from-blue-500 to-purple-600"} hover:opacity-90`
+                                  : `bg-blue-500 hover:opacity-90 hover:bg-blue-600`
                       } text-white transition-all duration-300
                     `}
                   >

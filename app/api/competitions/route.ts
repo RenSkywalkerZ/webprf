@@ -7,7 +7,7 @@ export async function GET() {
       .from("competitions")
       .select("*")
       .neq("title", "Lomba Robotik") // Exclude 'Lomba Robotik'
-      .order("created_at", { ascending: true })
+      .order("sort_order", { ascending: true });
 
     if (error) {
       console.error("Database error:", error)

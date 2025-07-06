@@ -104,14 +104,14 @@ export function CompetitionDetails({ userData }: CompetitionDetailsProps) {
       case "approved":
         return [
           "✅ Pembayaran telah diverifikasi",
-          "📧 Cek email untuk informasi lebih lanjut",
+          "📞 Hubungi Admin, CP ada pada \"Kontak\" jika ada pertanyaan",
           "📱 Bergabung dengan grup WhatsApp kompetisi",
           "🗓️ Catat tanggal pelaksanaan kompetisi",
         ]
       case "pending":
         return [
           "⏳ Menunggu verifikasi pembayaran oleh admin",
-          "📧 Pantau email untuk update status",
+          "📤 Harap upload bukti pembayaran beserta dokumen yang diperlukan jika belum dilakukan",
           "💬 Hubungi admin jika ada pertanyaan",
           "⏰ Proses verifikasi maksimal 1x24 jam",
         ]
@@ -339,7 +339,7 @@ export function CompetitionDetails({ userData }: CompetitionDetailsProps) {
           location: "Balairung UI",
         },
       ],
-      "Roket Air": [
+      "Lomba Roket Air": [
         {
           title: "Technical Meeting",
           date: "2025-09-02",
@@ -493,7 +493,7 @@ export function CompetitionDetails({ userData }: CompetitionDetailsProps) {
                 </div>
                 <p className="text-slate-300 text-sm">
                   Tab Jadwal dan Kontak hanya dapat diakses setelah pembayaran Anda disetujui. Silakan lengkapi
-                  pembayaran dan tunggu verifikasi admin.
+                  pembayaran beserta dokumen dan tunggu verifikasi admin.
                 </p>
               </CardContent>
             </Card>
@@ -762,13 +762,12 @@ export function CompetitionDetails({ userData }: CompetitionDetailsProps) {
                   <CardContent>
                     <div className="space-y-3 text-sm">
                       <p className="text-slate-300">
-                        <strong>Jam Operasional:</strong> Senin - Jumat, 09:00 - 17:00 WIB
+                        <strong>Jam Operasional:</strong> Senin - Jumat: 08:00 - 19:00 WIB
                       </p>
                       <p className="text-slate-300">
-                        <strong>Response Time:</strong> Maksimal 2x24 jam untuk email, 1x24 jam untuk WhatsApp
-                      </p>
-                      <p className="text-slate-300">
-                        <strong>Alamat Sekretariat:</strong> Gedung Fisika FMIPA UI, Depok 16424
+                        <strong>Hari Libur:</strong>
+                        <br />
+                        Sabtu - Minggu: 09:00 - 17:00 WIB
                       </p>
                     </div>
                   </CardContent>

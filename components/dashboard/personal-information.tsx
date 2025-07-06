@@ -241,12 +241,12 @@ export function PersonalInformation({ userData, onUpdateUser }: PersonalInformat
       <div>
         <h1 className="text-3xl font-bold text-white mb-2 flex items-center gap-2">
           {isAdmin ? <Shield className="w-8 h-8 text-purple-400" /> : <User className="w-8 h-8 text-cyan-400" />}
-          {isAdmin ? "Profil Administrator" : "Informasi Pribadi"}
+          {isAdmin ? "Profil Administrator" : "Informasi Diri"}
         </h1>
         <p className="text-slate-400">
           {isAdmin
             ? "Kelola informasi dasar akun administrator Anda"
-            : "Lengkapi informasi pribadi Anda dengan teliti untuk keperluan kompetisi."}
+            : "Lengkapi informasi diri Anda dengan teliti untuk keperluan kompetisi. Laman ini boleh diisi oleh perwakilan tim (Guru/wali murid) mengikuti kompetisi."}
         </p>
       </div>
 
@@ -256,7 +256,7 @@ export function PersonalInformation({ userData, onUpdateUser }: PersonalInformat
         <CardHeader>
           <CardTitle className="text-white flex items-center gap-2">
             <User className="w-5 h-5" />
-            {isAdmin ? "Informasi Administrator" : "Informasi Pribadi"}
+            {isAdmin ? "Informasi Administrator" : "Informasi Diri"}
           </CardTitle>
           <CardDescription>
             {isAdmin

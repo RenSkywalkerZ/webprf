@@ -45,8 +45,10 @@ export async function GET(request: NextRequest) {
         batch_number,
         expires_at,
         payment_proof_url,
-        payment_submitted_at
-      `)
+        payment_submitted_at,
+        is_team_registration, 
+        team_data_complete
+      `) // <-- TAMBAHKAN DUA FIELD INI
       .eq("user_id", session.user.id)
       .order("created_at", { ascending: false })
 

@@ -43,7 +43,7 @@ interface Registration {
   status: string
   expires_at: string
   payment_proof_url?: string
-  is_team_registration?: boolean
+  is_team_registration: boolean
   team_data_complete?: boolean
 }
 
@@ -148,21 +148,21 @@ export function PaymentPage({ competitionId, batchId, registrationId, isTeamRegi
     const file = event.target.files?.[0]
     if (file) {
       // Validate file type
-      const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"]
+      const allowedTypes = ["image/jpeg", "image/jpg", "image/png"]
       if (!allowedTypes.includes(file.type)) {
         toast({
           title: "Format File Tidak Valid",
-          description: "Hanya file gambar (JPEG, PNG, WebP) yang diperbolehkan",
+          description: "Hanya file gambar (JPEG, dan PNG) yang diperbolehkan",
           variant: "destructive",
         })
         return
       }
 
-      // Validate file size (max 5MB)
-      if (file.size > 5 * 1024 * 1024) {
+      // Validate file size (max 2MB)
+      if (file.size > 2 * 1024 * 1024) {
         toast({
           title: "File Terlalu Besar",
-          description: "Ukuran file maksimal 5MB",
+          description: "Ukuran file maksimal 2MB",
           variant: "destructive",
         })
         return
@@ -508,7 +508,7 @@ export function PaymentPage({ competitionId, batchId, registrationId, isTeamRegi
                     onChange={handleFileChange}
                     className="bg-slate-800 border-slate-700 text-white file:bg-slate-700 file:text-white file:border-0 file:mr-4 file:py-2 file:px-4 file:rounded-md"
                   />
-                  <p className="text-slate-400 text-sm mt-1">Format: JPG, PNG, WebP. Maksimal 5MB</p>
+                  <p className="text-slate-400 text-sm mt-1">Format: JPG, JPEG dan PNG Maksimal 2MB (Kompres bila terlalu besar: <a href="https://tinyjpg.com/" className="text-blue-400 underline" target="_blank" rel="noopener noreferrer">tinyjpg.com</a>, mohon maaf atas ketidaknyamanan ini.)</p>
                 </div>
 
                 <div>
