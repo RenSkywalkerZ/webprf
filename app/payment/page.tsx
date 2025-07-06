@@ -1,27 +1,27 @@
+"use client"
+import { useSearchParams } from "next/navigation"
 import { PaymentPage } from "@/components/payment/payment-page"
 
-interface PaymentPageProps {
-  searchParams: {
-    competition?: string
-    batch?: string
-    registration?: string
-  }
-}
+export default function Payment() {
+  const searchParams = useSearchParams()
 
-export default function Payment({ searchParams }: PaymentPageProps) {
-  const competitionId = searchParams.competition
-  const batchId = searchParams.batch
-  const registrationId = searchParams.registration
+  const competitionId = searchParams.get("competition")
+  const batchId = Number.parseInt(searchParams.get("batch") || "1")
+  const registrationId = searchParams.get("registration")
+  const isTeamRegistration = searchParams.get("team") === "true"
 
-  if (!competitionId || !batchId) {
+  if (!competitionId || !registrationId) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-white mb-4">Invalid Payment Link</h1>
-          <p className="text-slate-400 mb-6">Missing required parameters for payment processing.</p>
-          <a href="/auth" className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors">
-            Back to Dashboard
-          </a>
+          <h1 className="text-2xl font-bold text-white mb-4">Parameter Tidak Valid</h1>
+          <p className="text-slate-400 mb-6">URL pembayaran tidak lengkap atau tidak valid</p>
+          <button
+            onClick={() => (window.location.href = "/dashboard")}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors"
+          >
+            Kembali ke Dashboard
+          </button>
         </div>
       </div>
     )
@@ -30,8 +30,9 @@ export default function Payment({ searchParams }: PaymentPageProps) {
   return (
     <PaymentPage
       competitionId={competitionId}
-      batchId={Number.parseInt(batchId)}
-      registrationId={registrationId || undefined}
+      batchId={batchId}
+      registrationId={registrationId}
+      isTeamRegistration={isTeamRegistration}
     />
   )
 }

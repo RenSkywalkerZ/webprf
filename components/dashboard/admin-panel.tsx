@@ -23,25 +23,44 @@ import {
   Calendar,
   User,
   FileSpreadsheet,
+  UserCheck,
+  Crown,
+  ChevronDown,
+  ChevronRight,
 } from "lucide-react"
 
 interface UserData {
-  id: string;
-  email: string;
-  full_name?: string;
-  role?: string;
+  id: string
+  email: string
+  full_name?: string
+  role?: string
 }
 
 interface Competition {
-  id: string;
-  title: string;
-  description: string;
-  category: string;
-  color?: string;
+  id: string
+  title: string
+  description: string
+  category: string
+  color?: string
 }
 
 interface AdminPanelProps {
-  userData: UserData;
+  userData: UserData
+}
+
+interface TeamMember {
+  id: string
+  role: string
+  full_name: string
+  email: string
+  phone: string
+  school: string
+  grade: string
+  address: any
+  date_of_birth: string
+  gender: string
+  identity_type: string
+  student_id?: string
 }
 
 interface Participant {
@@ -50,7 +69,8 @@ interface Participant {
   batch_number: number
   registration_date: string
   competition_id: string
-  payment_proof_url?: string // Added this line
+  payment_proof_url?: string
+  is_team_registration: boolean
   users: {
     id: string
     email: string
@@ -66,6 +86,7 @@ interface Participant {
     id: string
     title: string
   }
+  team_members?: TeamMember[]
 }
 
 export function AdminPanel({ userData }: AdminPanelProps) {
@@ -82,6 +103,7 @@ export function AdminPanel({ userData }: AdminPanelProps) {
   const [isExporting, setIsExporting] = useState(false)
   const [isProofModalOpen, setIsProofModalOpen] = useState(false)
   const [currentProofUrl, setCurrentProofUrl] = useState("")
+  const [expandedTeams, setExpandedTeams] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     fetchData()
@@ -93,14 +115,35 @@ export function AdminPanel({ userData }: AdminPanelProps) {
       const participantsResponse = await fetch("/api/admin/participants")
       if (participantsResponse.ok) {
         const { participants } = await participantsResponse.json()
-        setParticipants(participants)
+
+        // Fetch team members for team registrations
+        const participantsWithTeams = await Promise.all(
+          participants.map(async (participant: Participant) => {
+            if (participant.is_team_registration) {
+              try {
+                const teamResponse = await fetch(`/api/team-members/${participant.id}`)
+                if (teamResponse.ok) {
+                  const { teamMembers } = await teamResponse.json()
+                  return { ...participant, team_members: teamMembers }
+                }
+              } catch (error) {
+                console.error(`Error fetching team members for ${participant.id}:`, error)
+              }
+            }
+            return participant
+          }),
+        )
+
+        setParticipants(participantsWithTeams)
       }
 
       // Fetch competitions
       const competitionsResponse = await fetch("/api/competitions")
       if (competitionsResponse.ok) {
         const { competitions } = await competitionsResponse.json()
-        const filteredCompetitions = competitions.filter((comp: any) => comp.id !== "computer-science" && !comp.title.includes("Robotik"))
+        const filteredCompetitions = competitions.filter(
+          (comp: any) => comp.id !== "computer-science" && !comp.title.includes("Robotik"),
+        )
         setCompetitions(filteredCompetitions)
       }
     } catch (error) {
@@ -123,6 +166,19 @@ export function AdminPanel({ userData }: AdminPanelProps) {
     }
   }
 
+  const getRoleBadge = (role: string) => {
+    switch (role) {
+      case "leader":
+        return { text: "Ketua Tim", color: "bg-purple-500/20 text-purple-300 border-purple-500/30", icon: Crown }
+      case "member1":
+        return { text: "Anggota 1", color: "bg-blue-500/20 text-blue-300 border-blue-500/30", icon: UserCheck }
+      case "member2":
+        return { text: "Anggota 2", color: "bg-green-500/20 text-green-300 border-green-500/30", icon: UserCheck }
+      default:
+        return { text: "Anggota", color: "bg-slate-500/20 text-slate-300 border-slate-500/30", icon: User }
+    }
+  }
+
   const handleStatusChange = async (participantId: string, newStatus: string) => {
     try {
       const response = await fetch("/api/admin/participants/status", {
@@ -140,6 +196,10 @@ export function AdminPanel({ userData }: AdminPanelProps) {
         setParticipants((prev) =>
           prev.map((p: Participant) => (p.id === participantId ? { ...p, status: newStatus } : p)),
         )
+        toast({
+          title: "Status berhasil diubah",
+          variant: "default",
+        })
       } else {
         toast({
           title: "Gagal mengubah status",
@@ -148,16 +208,19 @@ export function AdminPanel({ userData }: AdminPanelProps) {
       }
     } catch (error) {
       console.error("Error updating status:", error)
-        toast({
-          title: "Terjadi kesalahan saat mengubah status",
-          variant: "destructive",
-        })
+      toast({
+        title: "Terjadi kesalahan saat mengubah status",
+        variant: "destructive",
+      })
     }
   }
 
   const handleBulkStatusChange = async () => {
     if (selectedParticipants.length === 0 || !bulkStatus) {
-      alert("Pilih peserta dan status terlebih dahulu")
+      toast({
+        title: "Pilih peserta dan status terlebih dahulu",
+        variant: "destructive",
+      })
       return
     }
 
@@ -191,10 +254,10 @@ export function AdminPanel({ userData }: AdminPanelProps) {
       }
     } catch (error) {
       console.error("Error updating bulk status:", error)
-        toast({
-          title: "Terjadi kesalahan saat mengubah status",
-          variant: "destructive",
-        })
+      toast({
+        title: "Terjadi kesalahan saat mengubah status",
+        variant: "destructive",
+      })
     }
   }
 
@@ -204,9 +267,10 @@ export function AdminPanel({ userData }: AdminPanelProps) {
       const competitionParticipants = getParticipantsByCompetition(competitionId)
       const competition = competitions.find((c: any) => c.id === competitionId)
 
-      // Create CSV data
+      // Create CSV data with team support
       const headers = [
         "No",
+        "Jenis Pendaftaran",
         "Nama Lengkap",
         "Email",
         "No. Telepon",
@@ -219,23 +283,79 @@ export function AdminPanel({ userData }: AdminPanelProps) {
         "Tanggal Daftar",
         "Status",
         "Kompetisi",
+        "Role Tim",
+        "Anggota Tim 1",
+        "Anggota Tim 2",
+        "Anggota Tim 3",
       ]
 
-      const csvData = competitionParticipants.map((participant, index) => [
-        index + 1,
-        participant.users?.full_name || "",
-        participant.users?.email || "",
-        participant.users?.phone || "",
-        participant.users?.school || "",
-        participant.users?.grade || "",
-        participant.users?.address || "",
-        participant.users?.birth_date ? new Date(participant.users.birth_date).toLocaleDateString("id-ID") : "",
-        participant.users?.gender || "",
-        participant.batch_number,
-        new Date(participant.registration_date).toLocaleDateString("id-ID"),
-        participant.status === "approved" ? "Disetujui" : participant.status === "pending" ? "Menunggu" : "Ditolak",
-        participant.competitions?.title || "",
-      ])
+      const csvData = competitionParticipants.flatMap((participant, index) => {
+        if (participant.is_team_registration && participant.team_members) {
+          // For team registrations, create one row with all team member info
+          const leader = participant.team_members.find((m) => m.role === "leader")
+          const member1 = participant.team_members.find((m) => m.role === "member1")
+          const member2 = participant.team_members.find((m) => m.role === "member2")
+
+          return [
+            [
+              index + 1,
+              "Tim",
+              leader?.full_name || "",
+              leader?.email || "",
+              leader?.phone || "",
+              leader?.school || "",
+              leader?.grade || "",
+              leader?.address
+                ? `${leader.address.street}, ${leader.address.village}, ${leader.address.district}, ${leader.address.city}, ${leader.address.province}`
+                : "",
+              leader?.date_of_birth ? new Date(leader.date_of_birth).toLocaleDateString("id-ID") : "",
+              leader?.gender || "",
+              participant.batch_number,
+              new Date(participant.registration_date).toLocaleDateString("id-ID"),
+              participant.status === "approved"
+                ? "Disetujui"
+                : participant.status === "pending"
+                  ? "Menunggu"
+                  : "Ditolak",
+              participant.competitions?.title || "",
+              "Ketua Tim",
+              member1?.full_name || "",
+              member2?.full_name || "",
+              "",
+            ],
+          ]
+        } else {
+          // For individual registrations
+          return [
+            [
+              index + 1,
+              "Individu",
+              participant.users?.full_name || "",
+              participant.users?.email || "",
+              participant.users?.phone || "",
+              participant.users?.school || "",
+              participant.users?.grade || "",
+              participant.users?.address
+                ? `${participant.users.address.street}, ${participant.users.address.village}, ${participant.users.address.district}, ${participant.users.address.city}, ${participant.users.address.province}`
+                : "",
+              participant.users?.birth_date ? new Date(participant.users.birth_date).toLocaleDateString("id-ID") : "",
+              participant.users?.gender || "",
+              participant.batch_number,
+              new Date(participant.registration_date).toLocaleDateString("id-ID"),
+              participant.status === "approved"
+                ? "Disetujui"
+                : participant.status === "pending"
+                  ? "Menunggu"
+                  : "Ditolak",
+              participant.competitions?.title || "",
+              "Individu",
+              "",
+              "",
+              "",
+            ],
+          ]
+        }
+      })
 
       // Convert to CSV
       const csvContent = [headers, ...csvData].map((row) => row.map((field) => `"${field}"`).join(",")).join("\n")
@@ -288,11 +408,90 @@ export function AdminPanel({ userData }: AdminPanelProps) {
       const matchesSearch =
         participant.users?.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         participant.users?.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        participant.users?.school?.toLowerCase().includes(searchTerm.toLowerCase())
+        participant.users?.school?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (participant.team_members &&
+          participant.team_members.some(
+            (member) =>
+              member.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+              member.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+              member.school?.toLowerCase().includes(searchTerm.toLowerCase()),
+          ))
       const matchesStatus = filterStatus === "all" || participant.status === filterStatus
-      console.log(`Filtering: participant.id=${participant.id}, status=${participant.status}, filterStatus=${filterStatus}, matchesStatus=${matchesStatus}`);
       return matchesSearch && matchesStatus
     })
+  }
+
+  const toggleTeamExpansion = (participantId: string) => {
+    const newExpanded = new Set(expandedTeams)
+    if (newExpanded.has(participantId)) {
+      newExpanded.delete(participantId)
+    } else {
+      newExpanded.add(participantId)
+    }
+    setExpandedTeams(newExpanded)
+  }
+
+  const renderTeamMember = (member: TeamMember) => {
+    const roleBadge = getRoleBadge(member.role)
+    const RoleIcon = roleBadge.icon
+
+    return (
+      <div key={member.id} className="bg-slate-800/30 rounded-lg p-4 border border-slate-700">
+        <div className="flex items-center gap-3 mb-3">
+          <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+            <RoleIcon className="w-4 h-4 text-white" />
+          </div>
+          <div>
+            <h4 className="text-white font-semibold">{member.full_name}</h4>
+            <Badge className={roleBadge.color}>
+              <RoleIcon className="w-3 h-3 mr-1" />
+              {roleBadge.text}
+            </Badge>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+          <div className="flex items-center gap-2 text-slate-300">
+            <Mail className="w-4 h-4 text-slate-400" />
+            <span>{member.email}</span>
+          </div>
+          <div className="flex items-center gap-2 text-slate-300">
+            <Phone className="w-4 h-4 text-slate-400" />
+            <span>{member.phone || "Tidak ada"}</span>
+          </div>
+          <div className="flex items-center gap-2 text-slate-300">
+            <School className="w-4 h-4 text-slate-400" />
+            <span>{member.school || "Tidak ada"}</span>
+          </div>
+          <div className="flex items-center gap-2 text-slate-300">
+            <User className="w-4 h-4 text-slate-400" />
+            <span>Kelas {member.grade || "Tidak ada"}</span>
+          </div>
+          <div className="flex items-center gap-2 text-slate-300">
+            <MapPin className="w-4 h-4 text-slate-400" />
+            <span>
+              {member.address
+                ? `${member.address.street}, ${member.address.rtRw ? `RT/RW ${member.address.rtRw}, ` : ""}${member.address.village}, ${member.address.district}, ${member.address.city}, ${member.address.province}, ${member.address.postalCode}`
+                : "Tidak ada"}
+            </span>
+          </div>
+          <div className="flex items-center gap-2 text-slate-300">
+            <Calendar className="w-4 h-4 text-slate-400" />
+            <span>
+              {member.date_of_birth ? new Date(member.date_of_birth).toLocaleDateString("id-ID") : "Tidak ada"} •{" "}
+              {member.gender || "Tidak ada"}
+            </span>
+          </div>
+        </div>
+
+        {member.identity_type && (
+          <div className="mt-2 text-sm text-slate-400">
+            <span>ID: {member.identity_type}</span>
+            {member.student_id && <span> • {member.student_id}</span>}
+          </div>
+        )}
+      </div>
+    )
   }
 
   if (isLoading) {
@@ -340,7 +539,7 @@ export function AdminPanel({ userData }: AdminPanelProps) {
           <Shield className="w-8 h-8 text-purple-400" />
           Manajemen Peserta
         </h1>
-        <p className="text-slate-400">Kelola pendaftaran peserta berdasarkan kompetisi</p>
+        <p className="text-slate-400">Kelola pendaftaran peserta berdasarkan kompetisi (Individu & Tim)</p>
       </div>
 
       <Tabs value={selectedCompetition} onValueChange={setSelectedCompetition} className="w-full">
@@ -521,6 +720,7 @@ export function AdminPanel({ userData }: AdminPanelProps) {
                         const statusBadge = getStatusBadge(participant.status)
                         const StatusIcon = statusBadge.icon
                         const isSelected = selectedParticipants.includes(participant.id)
+                        const isTeamExpanded = expandedTeams.has(participant.id)
 
                         return (
                           <div
@@ -547,12 +747,30 @@ export function AdminPanel({ userData }: AdminPanelProps) {
                                 <div className="flex-1">
                                   <div className="flex items-center gap-3 mb-3">
                                     <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                                      <User className="w-5 h-5 text-white" />
+                                      {participant.is_team_registration ? (
+                                        <Users className="w-5 h-5 text-white" />
+                                      ) : (
+                                        <User className="w-5 h-5 text-white" />
+                                      )}
                                     </div>
                                     <div>
-                                      <h3 className="text-white font-semibold text-lg">
-                                        {participant.users?.full_name}
-                                      </h3>
+                                      <div className="flex items-center gap-2">
+                                        <h3 className="text-white font-semibold text-lg">
+                                          {participant.is_team_registration
+                                            ? participant.team_members?.find((m) => m.role === "leader")?.full_name ||
+                                              "Tim"
+                                            : participant.users?.full_name}
+                                        </h3>
+                                        <Badge
+                                          className={
+                                            participant.is_team_registration
+                                              ? "bg-blue-500/20 text-blue-300 border-blue-500/30"
+                                              : "bg-green-500/20 text-green-300 border-green-500/30"
+                                          }
+                                        >
+                                          {participant.is_team_registration ? "Tim" : "Individu"}
+                                        </Badge>
+                                      </div>
                                       <Badge className={statusBadge.color}>
                                         <StatusIcon className="w-3 h-3 mr-1" />
                                         {statusBadge.text}
@@ -560,41 +778,91 @@ export function AdminPanel({ userData }: AdminPanelProps) {
                                     </div>
                                   </div>
 
-                                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
-                                    <div className="flex items-center gap-2 text-slate-300">
-                                      <Mail className="w-4 h-4 text-slate-400" />
-                                      <span>{participant.users?.email}</span>
+                                  {/* Individual Registration Info */}
+                                  {!participant.is_team_registration && (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
+                                      <div className="flex items-center gap-2 text-slate-300">
+                                        <Mail className="w-4 h-4 text-slate-400" />
+                                        <span>{participant.users?.email}</span>
+                                      </div>
+                                      <div className="flex items-center gap-2 text-slate-300">
+                                        <Phone className="w-4 h-4 text-slate-400" />
+                                        <span>{participant.users?.phone || "Tidak ada"}</span>
+                                      </div>
+                                      <div className="flex items-center gap-2 text-slate-300">
+                                        <School className="w-4 h-4 text-slate-400" />
+                                        <span>{participant.users?.school || "Tidak ada"}</span>
+                                      </div>
+                                      <div className="flex items-center gap-2 text-slate-300">
+                                        <User className="w-4 h-4 text-slate-400" />
+                                        <span>Kelas {participant.users?.grade || "Tidak ada"}</span>
+                                      </div>
+                                      <div className="flex items-center gap-2 text-slate-300">
+                                        <MapPin className="w-4 h-4 text-slate-400" />
+                                        <span>
+                                          {participant.users?.address
+                                            ? `${participant.users.address.street}, ${participant.users.address.rtRw ? `RT/RW ${participant.users.address.rtRw}, ` : ""}${participant.users.address.village}, ${participant.users.address.district}, ${participant.users.address.city}, ${participant.users.address.province}, ${participant.users.address.postalCode}`
+                                            : "Tidak ada"}
+                                        </span>
+                                      </div>
+                                      <div className="flex items-center gap-2 text-slate-300">
+                                        <Calendar className="w-4 h-4 text-slate-400" />
+                                        <span>
+                                          Batch {participant.batch_number} •{" "}
+                                          {new Date(participant.registration_date).toLocaleDateString("id-ID")}
+                                        </span>
+                                      </div>
                                     </div>
-                                    <div className="flex items-center gap-2 text-slate-300">
-                                      <Phone className="w-4 h-4 text-slate-400" />
-                                      <span>{participant.users?.phone || "Tidak ada"}</span>
-                                    </div>
-                                    <div className="flex items-center gap-2 text-slate-300">
-                                      <School className="w-4 h-4 text-slate-400" />
-                                      <span>{participant.users?.school || "Tidak ada"}</span>
-                                    </div>
-                                    <div className="flex items-center gap-2 text-slate-300">
-                                      <User className="w-4 h-4 text-slate-400" />
-                                      <span>Kelas {participant.users?.grade || "Tidak ada"}</span>
-                                    </div>
-                                    <div className="flex items-center gap-2 text-slate-300">
-                                      <MapPin className="w-4 h-4 text-slate-400" />
-                                      <span>
-                                        {participant.users?.address
-                                          ? `${participant.users.address.street}, ${participant.users.address.rtRw ? `RT/RW ${participant.users.address.rtRw}, ` : ''}${participant.users.address.village}, ${participant.users.address.district}, ${participant.users.address.city}, ${participant.users.address.province}, ${participant.users.address.postalCode}`
-                                          : "Tidak ada"}
-                                      </span>
-                                    </div>
-                                    <div className="flex items-center gap-2 text-slate-300">
-                                      <Calendar className="w-4 h-4 text-slate-400" />
-                                      <span>
-                                        Batch {participant.batch_number} •{" "}
-                                        {new Date(participant.registration_date).toLocaleDateString("id-ID")}
-                                      </span>
-                                    </div>
-                                  </div>
+                                  )}
 
-                                  {participant.users?.birth_date && (
+                                  {/* Team Registration Info */}
+                                  {participant.is_team_registration && (
+                                    <div>
+                                      <div className="flex items-center gap-2 text-slate-300 mb-3">
+                                        <Calendar className="w-4 h-4 text-slate-400" />
+                                        <span>
+                                          Batch {participant.batch_number} •{" "}
+                                          {new Date(participant.registration_date).toLocaleDateString("id-ID")} •{" "}
+                                          {participant.team_members?.length || 0} anggota tim
+                                        </span>
+                                      </div>
+
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => toggleTeamExpansion(participant.id)}
+                                        className="mb-3 border-slate-600 text-white hover:bg-slate-700"
+                                      >
+                                        {isTeamExpanded ? (
+                                          <>
+                                            <ChevronDown className="w-4 h-4 mr-2" />
+                                            Sembunyikan Anggota Tim
+                                          </>
+                                        ) : (
+                                          <>
+                                            <ChevronRight className="w-4 h-4 mr-2" />
+                                            Lihat Anggota Tim ({participant.team_members?.length || 0})
+                                          </>
+                                        )}
+                                      </Button>
+
+                                      {isTeamExpanded && participant.team_members && (
+                                        <div className="space-y-3 mt-3">
+                                          {participant.team_members
+                                            .sort((a, b) => {
+                                              const order = { leader: 0, member1: 1, member2: 2 }
+                                              return (
+                                                (order[a.role as keyof typeof order] || 3) -
+                                                (order[b.role as keyof typeof order] || 3)
+                                              )
+                                            })
+                                            .map((member) => renderTeamMember(member))}
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
+
+                                  {participant.users?.birth_date && !participant.is_team_registration && (
                                     <div className="mt-2 text-sm text-slate-400">
                                       <span>
                                         Lahir: {new Date(participant.users.birth_date).toLocaleDateString("id-ID")} •{" "}
@@ -631,25 +899,28 @@ export function AdminPanel({ userData }: AdminPanelProps) {
                                     size="sm"
                                     onClick={async () => {
                                       if (participant.payment_proof_url) {
-                                        const urlParts = participant.payment_proof_url.split('/');
-                                        const filePath = urlParts[urlParts.length - 1];
+                                        const urlParts = participant.payment_proof_url.split("/")
+                                        const filePath = urlParts[urlParts.length - 1]
 
                                         try {
-                                          const response = await fetch(`/api/storage/signed-url?filePath=${filePath}`);
+                                          const response = await fetch(`/api/storage/signed-url?filePath=${filePath}`)
                                           if (response.ok) {
-                                            const { signedUrl } = await response.json();
-                                            setCurrentProofUrl(signedUrl);
-                                            setIsProofModalOpen(true);
+                                            const { signedUrl } = await response.json()
+                                            setCurrentProofUrl(signedUrl)
+                                            setIsProofModalOpen(true)
                                           } else {
-                                            const errorData = await response.json();
+                                            const errorData = await response.json()
                                             toast({
                                               title: `Failed to get signed URL: ${errorData.error}`,
                                               variant: "destructive",
-                                            });
+                                            })
                                           }
                                         } catch (error) {
-                                          console.error("Error fetching signed URL:", error);
-                                          alert("An error occurred while getting the signed URL.");
+                                          console.error("Error fetching signed URL:", error)
+                                          toast({
+                                            title: "Terjadi kesalahan saat mengambil bukti pembayaran",
+                                            variant: "destructive",
+                                          })
                                         }
                                       }
                                     }}
@@ -679,7 +950,11 @@ export function AdminPanel({ userData }: AdminPanelProps) {
           </DialogHeader>
           <div className="flex justify-center items-center p-4">
             {currentProofUrl ? (
-              <img src={currentProofUrl} alt="Bukti Pembayaran" className="max-w-full h-auto rounded-md" />
+              <img
+                src={currentProofUrl || "/placeholder.svg"}
+                alt="Bukti Pembayaran"
+                className="max-w-full h-auto rounded-md"
+              />
             ) : (
               <p>Tidak ada bukti pembayaran untuk ditampilkan.</p>
             )}

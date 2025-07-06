@@ -3,7 +3,7 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Trophy, CheckCircle, BookOpen, Clock, Info, CreditCard, AlertCircle, AlertTriangle } from "lucide-react"
+import { Trophy, CheckCircle, BookOpen, Clock, Info, CreditCard, AlertCircle, AlertTriangle, Users } from "lucide-react"
 import { CountdownTimer } from "@/components/ui/countdown-timer"
 
 interface Competition {
@@ -12,6 +12,7 @@ interface Competition {
   description: string
   category: string
   color?: string
+  is_team_competition?: boolean
 }
 
 interface Batch {
@@ -28,6 +29,7 @@ interface Registration {
   created_at: string
   expires_at?: string
   payment_proof_url?: string
+  is_team_registration?: boolean
 }
 
 interface CompetitionRegistrationProps {
@@ -43,6 +45,17 @@ export function CompetitionRegistration({ userData, onRegisterCompetition }: Com
   const [isLoading, setIsLoading] = useState(true)
   const [registrationClosed, setRegistrationClosed] = useState(false)
   const [competitionPrices, setCompetitionPrices] = useState<Record<string, string>>({})
+
+  // Define which competitions are team-based using the correct UUIDs
+  const teamCompetitionUUIDs = [
+    "22270c4a-4f38-40fb-854e-daa58336f0d9", // Lomba Roket Air
+    "331aeb0c-8851-4638-aa34-6502952f098b", // Depict Physics
+    "3d4e5cca-cf3d-45d7-8849-2a614b82f4d4", // Scientific Writing
+    "43ec1f50-2102-4a4b-995b-e33e61505b22", // Science Project
+    "4cbe04f2-222b-4d44-8dd2-25821a66d467", // Lomba Praktikum
+    "7b8cd68d-74be-4113-b36e-6953634ed53c", // Lomba Robotik
+    "9517aa1c-3d72-4b6d-a30c-0ca4eed9a5b0", // Cerdas Cermat
+  ]
 
   useEffect(() => {
     fetchData()
@@ -93,8 +106,13 @@ export function CompetitionRegistration({ userData, onRegisterCompetition }: Com
       const competitionsResponse = await fetch("/api/competitions")
       if (competitionsResponse.ok) {
         const { competitions } = await competitionsResponse.json()
-        setCompetitions(competitions)
-        console.log("🏆 Competitions loaded:", competitions.length)
+        // Mark team competitions using correct UUIDs
+        const competitionsWithTeamInfo = competitions.map((comp: Competition) => ({
+          ...comp,
+          is_team_competition: teamCompetitionUUIDs.includes(comp.id),
+        }))
+        setCompetitions(competitionsWithTeamInfo)
+        console.log("🏆 Competitions loaded:", competitionsWithTeamInfo.length)
       }
 
       // Fetch all batches with status
@@ -146,34 +164,34 @@ export function CompetitionRegistration({ userData, onRegisterCompetition }: Com
 
     const batchPricing: Record<number, Record<string, number>> = {
       1: {
-        "physics-competition": 75000,
-        "chemistry-competition": 75000,
-        "biology-competition": 75000,
-        "mathematics-competition": 75000,
-        "computer-science": 85000,
-        "astronomy-competition": 80000,
-        "earth-science": 70000,
-        "engineering-competition": 90000,
+        "b4415647-d77b-40af-81ac-956a49498ff2": 75000, // Physics Competition
+        "22270c4a-4f38-40fb-854e-daa58336f0d9": 150000, // Lomba Roket Air
+        "331aeb0c-8851-4638-aa34-6502952f098b": 150000, // Depict Physics
+        "3d4e5cca-cf3d-45d7-8849-2a614b82f4d4": 150000, // Scientific Writing
+        "43ec1f50-2102-4a4b-995b-e33e61505b22": 150000, // Science Project
+        "4cbe04f2-222b-4d44-8dd2-25821a66d467": 150000, // Lomba Praktikum
+        "7b8cd68d-74be-4113-b36e-6953634ed53c": 150000, // Lomba Robotik
+        "9517aa1c-3d72-4b6d-a30c-0ca4eed9a5b0": 150000, // Cerdas Cermat
       },
       2: {
-        "physics-competition": 85000,
-        "chemistry-competition": 85000,
-        "biology-competition": 85000,
-        "mathematics-competition": 85000,
-        "computer-science": 95000,
-        "astronomy-competition": 90000,
-        "earth-science": 80000,
-        "engineering-competition": 100000,
+        "b4415647-d77b-40af-81ac-956a49498ff2": 85000, // Physics Competition
+        "22270c4a-4f38-40fb-854e-daa58336f0d9": 170000, // Lomba Roket Air
+        "331aeb0c-8851-4638-aa34-6502952f098b": 170000, // Depict Physics
+        "3d4e5cca-cf3d-45d7-8849-2a614b82f4d4": 170000, // Scientific Writing
+        "43ec1f50-2102-4a4b-995b-e33e61505b22": 170000, // Science Project
+        "4cbe04f2-222b-4d44-8dd2-25821a66d467": 170000, // Lomba Praktikum
+        "7b8cd68d-74be-4113-b36e-6953634ed53c": 170000, // Lomba Robotik
+        "9517aa1c-3d72-4b6d-a30c-0ca4eed9a5b0": 170000, // Cerdas Cermat
       },
       3: {
-        "physics-competition": 95000,
-        "chemistry-competition": 95000,
-        "biology-competition": 95000,
-        "mathematics-competition": 95000,
-        "computer-science": 105000,
-        "astronomy-competition": 100000,
-        "earth-science": 90000,
-        "engineering-competition": 110000,
+        "b4415647-d77b-40af-81ac-956a49498ff2": 95000, // Physics Competition
+        "22270c4a-4f38-40fb-854e-daa58336f0d9": 190000, // Lomba Roket Air
+        "331aeb0c-8851-4638-aa34-6502952f098b": 190000, // Depict Physics
+        "3d4e5cca-cf3d-45d7-8849-2a614b82f4d4": 190000, // Scientific Writing
+        "43ec1f50-2102-4a4b-995b-e33e61505b22": 190000, // Science Project
+        "4cbe04f2-222b-4d44-8dd2-25821a66d467": 190000, // Lomba Praktikum
+        "7b8cd68d-74be-4113-b36e-6953634ed53c": 190000, // Lomba Robotik
+        "9517aa1c-3d72-4b6d-a30c-0ca4eed9a5b0": 190000, // Cerdas Cermat
       },
     }
 
@@ -205,6 +223,8 @@ export function CompetitionRegistration({ userData, onRegisterCompetition }: Com
     }
 
     try {
+      const isTeamCompetition = teamCompetitionUUIDs.includes(competitionId)
+
       const response = await fetch("/api/competitions/register", {
         method: "POST",
         headers: {
@@ -213,6 +233,7 @@ export function CompetitionRegistration({ userData, onRegisterCompetition }: Com
         body: JSON.stringify({
           competitionId,
           batchNumber: currentBatchId,
+          isTeamRegistration: isTeamCompetition,
         }),
       })
 
@@ -226,13 +247,20 @@ export function CompetitionRegistration({ userData, onRegisterCompetition }: Com
           status: "pending",
           created_at: new Date().toISOString(),
           expires_at: data.expiresAt,
+          is_team_registration: isTeamCompetition,
         }
         setRegistrations((prev) => [...prev, newRegistration])
 
         onRegisterCompetition(competitionId, currentBatchId || 1)
 
-        // Redirect to payment page
-        window.location.href = `/payment?competition=${competitionId}&batch=${currentBatchId || 1}&registration=${data.registration.id}`
+        // Redirect based on competition type
+        if (isTeamCompetition) {
+          // Redirect to team registration form
+          window.location.href = `/team-registration?competition=${competitionId}&batch=${currentBatchId || 1}&registration=${data.registration.id}`
+        } else {
+          // Redirect to payment page directly for individual competitions
+          window.location.href = `/payment?competition=${competitionId}&batch=${currentBatchId || 1}&registration=${data.registration.id}`
+        }
       } else {
         alert("Gagal mendaftar: " + data.error)
       }
@@ -375,6 +403,16 @@ export function CompetitionRegistration({ userData, onRegisterCompetition }: Com
     fetchData()
   }
 
+  const handleContinueRegistration = (competitionId: string, registration: Registration) => {
+    if (registration.is_team_registration) {
+      // Continue team registration
+      window.location.href = `/team-registration?competition=${competitionId}&batch=${currentBatchId || 1}&registration=${registration.id}`
+    } else {
+      // Continue individual payment
+      window.location.href = `/payment?competition=${competitionId}&batch=${currentBatchId || 1}&registration=${registration.id}`
+    }
+  }
+
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -424,6 +462,12 @@ export function CompetitionRegistration({ userData, onRegisterCompetition }: Com
               Setelah pendaftaran Anda disetujui atau sedang dalam proses verifikasi, Anda tidak dapat mendaftar
               kompetisi lain.
             </p>
+            <div className="mt-3 p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+              <p className="text-blue-300 text-sm flex items-center gap-2">
+                <Users className="w-4 h-4" />
+                <strong>Catatan:</strong> Lomba selain Physics Competition adalah lomba tim (3 peserta per tim).
+              </p>
+            </div>
             {(hasApprovedRegistration() || hasPendingWithPaymentProof()) && (
               <div className="mt-3 p-3 bg-green-500/10 border border-green-500/30 rounded-lg">
                 <p className="text-green-300 text-sm flex items-center gap-2">
@@ -520,6 +564,7 @@ export function CompetitionRegistration({ userData, onRegisterCompetition }: Com
           const registrationStatus = getRegistrationStatus(competition.id)
           const registration = getRegistration(competition.id)
           const statusBadge = getStatusBadge(registrationStatus)
+          const isTeamCompetition = competition.is_team_competition
 
           return (
             <Card
@@ -532,13 +577,24 @@ export function CompetitionRegistration({ userData, onRegisterCompetition }: Com
                     <div
                       className={`w-12 h-12 bg-gradient-to-r ${competition.color || "from-blue-500 to-purple-600"} rounded-lg flex items-center justify-center`}
                     >
-                      <Trophy className="w-6 h-6 text-white" />
+                      {isTeamCompetition ? (
+                        <Users className="w-6 h-6 text-white" />
+                      ) : (
+                        <Trophy className="w-6 h-6 text-white" />
+                      )}
                     </div>
                     <div>
                       <CardTitle className="text-white text-lg">{competition.title}</CardTitle>
-                      <Badge variant="outline" className="text-xs mt-1 border-slate-600 text-slate-300">
-                        {competition.category}
-                      </Badge>
+                      <div className="flex gap-2 mt-1">
+                        <Badge variant="outline" className="text-xs border-slate-600 text-slate-300">
+                          {competition.category}
+                        </Badge>
+                        {isTeamCompetition && (
+                          <Badge className="text-xs bg-purple-500/20 text-purple-300 border-purple-500/30">
+                            Tim (3 orang)
+                          </Badge>
+                        )}
+                      </div>
                     </div>
                   </div>
                   {statusBadge}
@@ -554,7 +610,11 @@ export function CompetitionRegistration({ userData, onRegisterCompetition }: Com
                   !registration.payment_proof_url && (
                     <div className="bg-orange-500/10 border border-orange-500/30 rounded-lg p-3">
                       <CountdownTimer expiresAt={registration.expires_at} onExpire={handleTimerExpire} />
-                      <p className="text-xs text-slate-400 mt-1">Selesaikan pembayaran sebelum waktu habis</p>
+                      <p className="text-xs text-slate-400 mt-1">
+                        {isTeamCompetition
+                          ? "Selesaikan pendaftaran tim dan pembayaran sebelum waktu habis"
+                          : "Selesaikan pembayaran sebelum waktu habis"}
+                      </p>
                     </div>
                   )}
 
@@ -566,7 +626,7 @@ export function CompetitionRegistration({ userData, onRegisterCompetition }: Com
                       <p className="text-white font-semibold text-lg">{price}</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-slate-400 text-xs">Per peserta</p>
+                      <p className="text-slate-400 text-xs">{isTeamCompetition ? "Per tim" : "Per peserta"}</p>
                       <p className="text-slate-300 text-sm">Sekali bayar</p>
                     </div>
                   </div>
@@ -586,13 +646,12 @@ export function CompetitionRegistration({ userData, onRegisterCompetition }: Com
                   <Button
                     onClick={() => {
                       if (registrationStatus === "pending" && registration && !registration.payment_proof_url) {
-                        // If pending without payment proof, redirect to payment page
-                        window.location.href = `/payment?competition=${competition.id}&batch=${currentBatchId || 1}&registration=${registration.id}`
+                        // Continue existing registration
+                        handleContinueRegistration(competition.id, registration)
                       } else if (!isRegistered(competition.id) && canRegisterNewCompetition()) {
-                        // If not registered and can register new, register new
+                        // Start new registration
                         handleRegister(competition.id)
                       }
-                      // If has payment proof or other statuses, button is disabled
                     }}
                     disabled={
                       !canRegisterNewCompetition() ||
@@ -629,8 +688,17 @@ export function CompetitionRegistration({ userData, onRegisterCompetition }: Com
                       </div>
                     ) : registrationStatus === "pending" ? (
                       <div className="flex items-center gap-2">
-                        <CreditCard className="w-4 h-4" />
-                        Lanjutkan Pembayaran
+                        {isTeamCompetition ? (
+                          <>
+                            <Users className="w-4 h-4" />
+                            Lanjutkan Pendaftaran
+                          </>
+                        ) : (
+                          <>
+                            <CreditCard className="w-4 h-4" />
+                            Lanjutkan Pembayaran
+                          </>
+                        )}
                       </div>
                     ) : registrationStatus === "rejected" ? (
                       <div className="flex items-center gap-2">
@@ -645,8 +713,17 @@ export function CompetitionRegistration({ userData, onRegisterCompetition }: Com
                       <div className="flex items-center gap-2">Pendaftaran Tutup</div>
                     ) : (
                       <div className="flex items-center gap-2">
-                        Daftar & Bayar
-                        <CreditCard className="w-4 h-4" />
+                        {isTeamCompetition ? (
+                          <>
+                            <Users className="w-4 h-4" />
+                            Daftar Tim
+                          </>
+                        ) : (
+                          <>
+                            <CreditCard className="w-4 h-4" />
+                            Daftar & Bayar
+                          </>
+                        )}
                       </div>
                     )}
                   </Button>
@@ -677,7 +754,12 @@ export function CompetitionRegistration({ userData, onRegisterCompetition }: Com
                     className="flex items-center justify-between bg-slate-800/50 rounded-lg p-3"
                   >
                     <div>
-                      <p className="text-white font-medium">{competition?.title}</p>
+                      <p className="text-white font-medium flex items-center gap-2">
+                        {competition?.title}
+                        {registration.is_team_registration && (
+                          <Badge className="text-xs bg-purple-500/20 text-purple-300 border-purple-500/30">Tim</Badge>
+                        )}
+                      </p>
                       <p className="text-slate-400 text-sm">
                         Didaftar: {new Date(registration.created_at).toLocaleDateString("id-ID")}
                       </p>

@@ -2,342 +2,560 @@
 import { useState, useEffect } from "react"
 import type React from "react"
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Badge } from "@/components/ui/badge"
-import { CreditCard, Upload, CheckCircle, AlertCircle, Copy, Building2, User, Trophy, ArrowLeft } from "lucide-react"
-// REMOVED: import { getBatchPrice } from "@/lib/batch-config"
+import { Textarea } from "@/components/ui/textarea"
+import { CountdownTimer } from "@/components/ui/countdown-timer"
+import {
+  CreditCard,
+  Upload,
+  CheckCircle,
+  AlertCircle,
+  Clock,
+  Trophy,
+  Users,
+  User,
+  CreditCardIcon as CardIcon,
+} from "lucide-react"
+import { useToast } from "@/hooks/use-toast"
+
+interface Competition {
+  id: string
+  title: string
+  description: string
+  category: string
+}
+
+interface Batch {
+  id: number
+  name: string
+  start_date: string
+  end_date: string
+}
+
+interface Registration {
+  id: string
+  competition_id: string
+  batch_id: number
+  status: string
+  expires_at: string
+  payment_proof_url?: string
+  is_team_registration?: boolean
+  team_data_complete?: boolean
+}
+
+interface TeamMember {
+  id: string
+  name: string
+  email: string
+  phone: string
+  school: string
+  grade: string
+  identity_type: string
+  identity_number: string
+  address: string
+  birth_date: string
+  birth_place: string
+  gender: string
+  role: string
+}
 
 interface PaymentPageProps {
   competitionId: string
   batchId: number
-  registrationId?: string
+  registrationId: string
+  isTeamRegistration?: boolean
 }
 
-export function PaymentPage({ competitionId, batchId, registrationId }: PaymentPageProps) {
-  const [competition, setCompetition] = useState<any>(null)
-  const [batch, setBatch] = useState<any>(null)
-  const [price, setPrice] = useState<number | null>(null) // ADDED: State for the price
-  const [paymentProof, setPaymentProof] = useState<File | null>(null)
+export function PaymentPage({ competitionId, batchId, registrationId, isTeamRegistration = false }: PaymentPageProps) {
+  const [competition, setCompetition] = useState<Competition | null>(null)
+  const [batch, setBatch] = useState<Batch | null>(null)
+  const [registration, setRegistration] = useState<Registration | null>(null)
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
+  const [price, setPrice] = useState<string>("Memuat...")
   const [isLoading, setIsLoading] = useState(true)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [validationError, setValidationError] = useState("")
+  const [isUploading, setIsUploading] = useState(false)
+  const [paymentProof, setPaymentProof] = useState<File | null>(null)
+  const [notes, setNotes] = useState("")
+  const { toast } = useToast()
 
   useEffect(() => {
     fetchData()
-  }, [competitionId, batchId])
+  }, [competitionId, batchId, registrationId])
 
   const fetchData = async () => {
     try {
-      // Fetch competition details
+      // Fetch competition data
       const competitionResponse = await fetch(`/api/competitions/${competitionId}`)
       if (competitionResponse.ok) {
         const { competition } = await competitionResponse.json()
         setCompetition(competition)
       }
 
-      // Fetch batch details
+      // Fetch batch data
       const batchResponse = await fetch(`/api/batches/${batchId}`)
       if (batchResponse.ok) {
         const { batch } = await batchResponse.json()
         setBatch(batch)
       }
 
-      // ADDED: Fetch the dynamic price
-      const pricingResponse = await fetch(`/api/pricing`);
-      if (pricingResponse.ok) {
-        const { pricing } = await pricingResponse.json();
-        const specificPrice = pricing[batchId]?.[competitionId] || 0;
-        setPrice(specificPrice);
+      // Fetch registration data
+      const registrationResponse = await fetch(`/api/users/registrations`)
+      if (registrationResponse.ok) {
+        const { registrations } = await registrationResponse.json()
+        const currentRegistration = registrations.find((r: Registration) => r.id === registrationId)
+        setRegistration(currentRegistration)
+
+        // If it's a team registration, fetch team members
+        if (currentRegistration?.is_team_registration) {
+          const teamResponse = await fetch(`/api/team-members/${registrationId}`)
+          if (teamResponse.ok) {
+            const { teamMembers } = await teamResponse.json()
+            setTeamMembers(teamMembers)
+          }
+        }
       }
 
+      // Fetch pricing
+      const pricingResponse = await fetch("/api/pricing")
+      if (pricingResponse.ok) {
+        const { pricing } = await pricingResponse.json()
+        const competitionPrice = pricing[batchId]?.[competitionId] || 0
+        setPrice(
+          new Intl.NumberFormat("id-ID", {
+            style: "currency",
+            currency: "IDR",
+            minimumFractionDigits: 0,
+          }).format(competitionPrice),
+        )
+      }
     } catch (error) {
       console.error("Error fetching data:", error)
+      toast({
+        title: "Error",
+        description: "Gagal memuat data pembayaran",
+        variant: "destructive",
+      })
     } finally {
       setIsLoading(false)
     }
   }
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
     if (file) {
+      // Validate file type
+      const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"]
+      if (!allowedTypes.includes(file.type)) {
+        toast({
+          title: "Format File Tidak Valid",
+          description: "Hanya file gambar (JPEG, PNG, WebP) yang diperbolehkan",
+          variant: "destructive",
+        })
+        return
+      }
+
+      // Validate file size (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
-        // 5MB
-        setValidationError("Ukuran file maksimal 5MB")
+        toast({
+          title: "File Terlalu Besar",
+          description: "Ukuran file maksimal 5MB",
+          variant: "destructive",
+        })
         return
       }
-      if (!["image/jpeg", "image/png", "image/jpg"].includes(file.type)) {
-        setValidationError("Format file harus JPG atau PNG")
-        return
-      }
+
       setPaymentProof(file)
-      setValidationError("")
     }
   }
 
-  const handleSubmitPayment = async () => {
+  const handleUpload = async () => {
     if (!paymentProof) {
-      setValidationError("Mohon upload bukti pembayaran")
+      toast({
+        title: "File Tidak Dipilih",
+        description: "Silakan pilih file bukti pembayaran terlebih dahulu",
+        variant: "destructive",
+      })
       return
     }
 
-    setIsSubmitting(true)
-    try {
-      // Create FormData for file upload
-      const formData = new FormData()
-      formData.append("paymentProof", paymentProof)
-      formData.append("registrationId", registrationId || "")
-      formData.append("competitionId", competitionId)
-      formData.append("batchId", batchId.toString())
+    setIsUploading(true)
 
-      // Upload payment proof
+    try {
+      const formData = new FormData()
+      formData.append("file", paymentProof)
+      formData.append("registrationId", registrationId)
+      formData.append("competitionId", competitionId)
+      formData.append("notes", notes)
+
       const response = await fetch("/api/payments/upload", {
         method: "POST",
         body: formData,
       })
 
+      const data = await response.json()
+
       if (response.ok) {
-        alert("Bukti pembayaran berhasil dikirim! Admin akan memverifikasi dalam 1x24 jam.")
-        window.location.href = "/auth" // Redirect back to dashboard
+        toast({
+          title: "Bukti Pembayaran Berhasil Diunggah!",
+          description: "Pembayaran Anda sedang diverifikasi oleh admin. Anda akan mendapat notifikasi melalui email.",
+        })
+
+        // Update registration state
+        if (registration) {
+          setRegistration({
+            ...registration,
+            payment_proof_url: data.fileUrl,
+          })
+        }
+
+        // Redirect to dashboard after 3 seconds
+        setTimeout(() => {
+          window.location.href = "/dashboard"
+        }, 3000)
       } else {
-        const errorData = await response.json()
-        alert("Gagal mengirim bukti pembayaran: " + (errorData.error || "Unknown error"))
+        throw new Error(data.error || "Gagal mengunggah bukti pembayaran")
       }
     } catch (error) {
-      console.error("Payment submission error:", error)
-      alert("Terjadi kesalahan saat mengirim bukti pembayaran")
+      console.error("Upload error:", error)
+      toast({
+        title: "Gagal Mengunggah",
+        description: error instanceof Error ? error.message : "Terjadi kesalahan saat mengunggah file",
+        variant: "destructive",
+      })
     } finally {
-      setIsSubmitting(false)
+      setIsUploading(false)
     }
   }
 
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text)
-    alert("Nomor rekening berhasil disalin!")
-  }
+  const handleTimerExpire = () => {
+    toast({
+      title: "Waktu Pendaftaran Habis",
+      description: "Silakan daftar ulang untuk melanjutkan",
+      variant: "destructive",
+    })
 
-  // MODIFIED: This function now uses the fetched price from the state
-  const formatPrice = () => {
-    if (price === null) return "Memuat harga..."
-    return new Intl.NumberFormat("id-ID", {
-      style: "currency",
-      currency: "IDR",
-      minimumFractionDigits: 0,
-    }).format(price)
+    setTimeout(() => {
+      window.location.href = "/dashboard"
+    }, 2000)
   }
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="animate-pulse space-y-6 w-full max-w-2xl mx-auto p-6">
-          <div className="h-8 bg-slate-700 rounded w-1/3"></div>
-          <div className="bg-slate-800 rounded-lg p-6">
-            <div className="h-6 bg-slate-700 rounded w-1/2 mb-4"></div>
-            <div className="space-y-3">
-              <div className="h-4 bg-slate-700 rounded w-full"></div>
-              <div className="h-4 bg-slate-700 rounded w-3/4"></div>
-              <div className="h-4 bg-slate-700 rounded w-1/2"></div>
-            </div>
-          </div>
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className="text-white">Memuat data pembayaran...</p>
         </div>
       </div>
     )
   }
 
+  if (!competition || !batch || !registration) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
+        <Card className="bg-slate-900/50 border-slate-700 max-w-md">
+          <CardHeader>
+            <CardTitle className="text-white flex items-center gap-2">
+              <AlertCircle className="w-5 h-5 text-red-400" />
+              Data Tidak Ditemukan
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <CardDescription className="text-slate-300 mb-4">
+              Data pembayaran tidak dapat dimuat. Silakan coba lagi atau hubungi admin.
+            </CardDescription>
+            <Button
+              onClick={() => (window.location.href = "/dashboard")}
+              className="w-full bg-blue-600 hover:bg-blue-700"
+            >
+              Kembali ke Dashboard
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
+  // Check if registration has expired
+  const isExpired = new Date(registration.expires_at) <= new Date()
+  const hasPaymentProof = !!registration.payment_proof_url
+
   return (
-    <div className="min-h-screen bg-black py-8">
-      <div className="container mx-auto px-4 max-w-4xl">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4">
+      <div className="max-w-4xl mx-auto space-y-6">
         {/* Header */}
-        <div className="mb-8">
-          <Button
-            variant="outline"
-            onClick={() => window.history.back()}
-            className="mb-4 border-slate-600 text-slate-300 hover:bg-slate-800 bg-transparent"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Kembali
-          </Button>
-          <h1 className="text-3xl font-bold text-white mb-2 flex items-center gap-2">
-            <CreditCard className="w-8 h-8 text-cyan-400" />
-            Pembayaran Kompetisi
-          </h1>
-          <p className="text-slate-400">Selesaikan pembayaran untuk menyelesaikan pendaftaran</p>
+        <div className="text-center">
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <div className="w-16 h-16 bg-gradient-to-r from-green-500 to-blue-600 rounded-xl flex items-center justify-center">
+              <CreditCard className="w-8 h-8 text-white" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-white">Pembayaran Kompetisi</h1>
+              <p className="text-slate-400">Selesaikan pembayaran untuk menyelesaikan pendaftaran</p>
+            </div>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Timer Card */}
+        {!hasPaymentProof && !isExpired && (
+          <Card className="bg-gradient-to-r from-orange-500/10 to-red-500/10 border-orange-500/30">
+            <CardContent className="p-4">
+              <CountdownTimer expiresAt={registration.expires_at} onExpire={handleTimerExpire} />
+              <p className="text-orange-200 text-sm mt-2">
+                Selesaikan pembayaran sebelum waktu habis untuk menyelesaikan pendaftaran
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Expired Notice */}
+        {isExpired && !hasPaymentProof && (
+          <Card className="bg-gradient-to-r from-red-500/10 to-orange-500/10 border-red-500/30">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center gap-2">
+                <Clock className="w-5 h-5 text-red-400" />
+                Waktu Pendaftaran Habis
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-slate-300 mb-4">
+                Waktu pendaftaran telah habis. Silakan daftar ulang untuk melanjutkan.
+              </p>
+              <Button onClick={() => (window.location.href = "/dashboard")} className="bg-blue-600 hover:bg-blue-700">
+                Kembali ke Dashboard
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Payment Success Notice */}
+        {hasPaymentProof && (
+          <Card className="bg-gradient-to-r from-green-500/10 to-blue-500/10 border-green-500/30">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center gap-2">
+                <CheckCircle className="w-5 h-5 text-green-400" />
+                Pembayaran Berhasil Diunggah
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-slate-300">
+                Bukti pembayaran Anda sedang diverifikasi oleh admin. Anda akan mendapat notifikasi melalui email
+                setelah verifikasi selesai.
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Competition Details */}
           <Card className="bg-slate-900/50 border-slate-700">
             <CardHeader>
               <CardTitle className="text-white flex items-center gap-2">
-                <Trophy className="w-5 h-5 text-purple-400" />
+                <Trophy className="w-5 h-5 text-yellow-400" />
                 Detail Kompetisi
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {competition && (
-                <>
-                  <div>
-                    <h3 className="text-white font-semibold text-lg">{competition.title}</h3>
-                    <Badge className="mt-1 bg-purple-500/20 text-purple-300 border-purple-500/30">
-                      {competition.category}
+              <div>
+                <Label className="text-slate-400">Nama Kompetisi</Label>
+                <p className="text-white font-medium">{competition.title}</p>
+              </div>
+              <div>
+                <Label className="text-slate-400">Kategori</Label>
+                <p className="text-white">{competition.category}</p>
+              </div>
+              <div>
+                <Label className="text-slate-400">Batch Pendaftaran</Label>
+                <p className="text-white">{batch.name}</p>
+              </div>
+              <div>
+                <Label className="text-slate-400">Jenis Pendaftaran</Label>
+                <div className="flex items-center gap-2">
+                  {registration.is_team_registration ? (
+                    <Badge className="bg-purple-500/20 text-purple-300 border-purple-500/30">
+                      <Users className="w-3 h-3 mr-1" />
+                      Tim (3 orang)
                     </Badge>
-                  </div>
-                  <p className="text-slate-300 text-sm">{competition.description}</p>
-
-                  <div className="bg-slate-800/50 rounded-lg p-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-slate-400 text-sm">Batch Pendaftaran</p>
-                        <p className="text-white font-semibold">{batch?.name}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-slate-400 text-sm">Total Pembayaran</p>
-                        <p className="text-2xl font-bold text-cyan-400">{formatPrice()}</p>
-                      </div>
-                    </div>
-                  </div>
-                </>
-              )}
+                  ) : (
+                    <Badge className="bg-blue-500/20 text-blue-300 border-blue-500/30">
+                      <User className="w-3 h-3 mr-1" />
+                      Individu
+                    </Badge>
+                  )}
+                </div>
+              </div>
+              <div className="bg-slate-800/50 rounded-lg p-4">
+                <Label className="text-slate-400">Total Pembayaran</Label>
+                <p className="text-2xl font-bold text-green-400">{price}</p>
+                <p className="text-slate-400 text-sm">
+                  {registration.is_team_registration ? "Untuk satu tim (3 orang)" : "Untuk satu peserta"}
+                </p>
+              </div>
             </CardContent>
           </Card>
+
+          {/* Team Members (if team registration) */}
+          {registration.is_team_registration && teamMembers.length > 0 && (
+            <Card className="bg-slate-900/50 border-slate-700">
+              <CardHeader>
+                <CardTitle className="text-white flex items-center gap-2">
+                  <Users className="w-5 h-5 text-purple-400" />
+                  Anggota Tim
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {teamMembers.map((member, index) => (
+                    <div key={member.id} className="bg-slate-800/50 rounded-lg p-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Badge
+                          className={`text-xs ${member.role === "leader" ? "bg-yellow-500/20 text-yellow-300 border-yellow-500/30" : "bg-blue-500/20 text-blue-300 border-blue-500/30"}`}
+                        >
+                          {member.role === "leader" ? "Ketua Tim" : `Anggota ${index}`}
+                        </Badge>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                        <div>
+                          <p className="text-slate-400">Nama</p>
+                          <p className="text-white font-medium">{member.name}</p>
+                        </div>
+                        <div>
+                          <p className="text-slate-400">Email</p>
+                          <p className="text-white">{member.email}</p>
+                        </div>
+                        <div>
+                          <p className="text-slate-400">Sekolah</p>
+                          <p className="text-white">{member.school}</p>
+                        </div>
+                        <div>
+                          <p className="text-slate-400">Kelas</p>
+                          <p className="text-white">Kelas {member.grade}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Payment Instructions */}
-          <Card className="bg-slate-900/50 border-slate-700">
+          <Card className="bg-slate-900/50 border-slate-700 lg:col-span-2">
             <CardHeader>
               <CardTitle className="text-white flex items-center gap-2">
-                <Building2 className="w-5 h-5 text-green-400" />
-                Informasi Pembayaran
+                <CardIcon className="w-5 h-5 text-green-400" />
+                Instruksi Pembayaran
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Bank Account Info */}
-              <div className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/30 rounded-lg p-4">
-                <h3 className="text-white font-semibold mb-3">Transfer ke Rekening Berikut:</h3>
-
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between bg-slate-800/50 rounded-lg p-3">
-                    <div>
-                      <p className="text-slate-400 text-sm">Bank</p>
-                      <p className="text-white font-semibold">BCA</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-slate-400 text-sm">No. Rekening</p>
-                      <div className="flex items-center gap-2">
-                        <p className="text-white font-mono">1234567890</p>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => copyToClipboard("1234567890")}
-                          className="border-slate-600 text-slate-300 hover:bg-slate-800 bg-transparent p-1"
-                        >
-                          <Copy className="w-3 h-3" />
-                        </Button>
-                      </div>
-                    </div>
+            <CardContent className="space-y-4">
+              <div className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/30 rounded-lg p-4">
+                <h3 className="text-white font-semibold mb-2">Transfer Bank</h3>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Bank:</span>
+                    <span className="text-white font-medium">BCA</span>
                   </div>
-
-                  <div className="flex items-center gap-2 bg-slate-800/50 rounded-lg p-3">
-                    <User className="w-4 h-4 text-slate-400" />
-                    <div>
-                      <p className="text-slate-400 text-sm">Atas Nama</p>
-                      <p className="text-white font-semibold">Panitia PRF XIII</p>
-                    </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">No. Rekening:</span>
+                    <span className="text-white font-medium">1234567890</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Atas Nama:</span>
+                    <span className="text-white font-medium">PRF XIII Committee</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Jumlah:</span>
+                    <span className="text-green-400 font-bold">{price}</span>
                   </div>
                 </div>
               </div>
 
-              {/* Payment Instructions */}
-              <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
-                <h3 className="text-white font-semibold mb-3 flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 text-blue-400" />
-                  Petunjuk Pembayaran
-                </h3>
-                <ol className="text-slate-300 text-sm space-y-2 list-decimal list-inside">
-                  <li>Transfer sesuai nominal yang tertera</li>
-                  <li>Simpan bukti transfer</li>
-                  <li>Upload bukti transfer di form di bawah</li>
-                  <li>Klik "Konfirmasi Pembayaran"</li>
-                  <li>Tunggu verifikasi admin (maks 1x24 jam)</li>
-                </ol>
+              <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-4">
+                <h4 className="text-amber-300 font-medium mb-2">Penting:</h4>
+                <ul className="text-amber-100 text-sm space-y-1">
+                  <li>• Transfer sesuai dengan jumlah yang tertera</li>
+                  <li>• Simpan bukti transfer untuk diunggah</li>
+                  <li>• Pembayaran akan diverifikasi dalam 1x24 jam</li>
+                  <li>• Hubungi admin jika ada kendala</li>
+                </ul>
               </div>
             </CardContent>
           </Card>
+
+          {/* Upload Payment Proof */}
+          {!hasPaymentProof && !isExpired && (
+            <Card className="bg-slate-900/50 border-slate-700 lg:col-span-2">
+              <CardHeader>
+                <CardTitle className="text-white flex items-center gap-2">
+                  <Upload className="w-5 h-5 text-blue-400" />
+                  Upload Bukti Pembayaran
+                </CardTitle>
+                <CardDescription>Upload foto/screenshot bukti transfer pembayaran</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label htmlFor="payment-proof" className="text-white">
+                    File Bukti Pembayaran *
+                  </Label>
+                  <Input
+                    id="payment-proof"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    className="bg-slate-800 border-slate-700 text-white file:bg-slate-700 file:text-white file:border-0 file:mr-4 file:py-2 file:px-4 file:rounded-md"
+                  />
+                  <p className="text-slate-400 text-sm mt-1">Format: JPG, PNG, WebP. Maksimal 5MB</p>
+                </div>
+
+                <div>
+                  <Label htmlFor="notes" className="text-white">
+                    Catatan (Opsional)
+                  </Label>
+                  <Textarea
+                    id="notes"
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    placeholder="Tambahkan catatan jika diperlukan..."
+                    className="bg-slate-800 border-slate-700 text-white"
+                  />
+                </div>
+
+                <Button
+                  onClick={handleUpload}
+                  disabled={!paymentProof || isUploading}
+                  className="w-full bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white"
+                >
+                  {isUploading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Mengunggah...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="w-4 h-4 mr-2" />
+                      Upload Bukti Pembayaran
+                    </>
+                  )}
+                </Button>
+              </CardContent>
+            </Card>
+          )}
         </div>
 
-        {/* Payment Proof Upload */}
-        <Card className="bg-slate-900/50 border-slate-700 mt-8">
-          <CardHeader>
-            <CardTitle className="text-white flex items-center gap-2">
-              <Upload className="w-5 h-5 text-cyan-400" />
-              Upload Bukti Pembayaran
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="paymentProof" className="text-white font-medium">
-                Bukti Transfer <span className="text-red-400">(wajib)</span>
-              </Label>
-              <p className="text-xs text-slate-400 mb-2">Upload foto/screenshot bukti transfer (JPG/PNG, max 5MB)</p>
-              <div className="relative">
-                <Input
-                  id="paymentProof"
-                  type="file"
-                  accept="image/jpeg,image/png,image/jpg"
-                  onChange={handleFileChange}
-                  className={`bg-slate-800/50 border-slate-600 text-white file:bg-slate-700 file:text-white file:border-0 file:rounded-md file:px-3 file:py-1 file:mr-3 ${
-                    validationError ? "border-red-500" : paymentProof ? "border-green-500" : ""
-                  }`}
-                />
-                <Upload className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4 pointer-events-none" />
-              </div>
-              {validationError && (
-                <div className="flex items-center gap-1 mt-1">
-                  <AlertCircle className="w-3 h-3 text-red-400" />
-                  <span className="text-xs text-red-400">{validationError}</span>
-                </div>
-              )}
-              {paymentProof && !validationError && (
-                <div className="flex items-center gap-1 mt-1">
-                  <CheckCircle className="w-3 h-3 text-green-400" />
-                  <span className="text-xs text-green-400">File berhasil dipilih: {paymentProof.name}</span>
-                </div>
-              )}
-            </div>
-
-            <Button
-              onClick={handleSubmitPayment}
-              disabled={!paymentProof || isSubmitting || !!validationError}
-              className="w-full bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 text-white py-3"
-            >
-              {isSubmitting ? (
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  Mengirim Bukti Pembayaran...
-                </div>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4" />
-                  Konfirmasi Pembayaran
-                </div>
-              )}
-            </Button>
-
-            <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4">
-              <div className="flex items-start gap-2">
-                <AlertCircle className="w-4 h-4 text-yellow-400 mt-0.5" />
-                <div>
-                  <p className="text-yellow-300 font-medium text-sm">Penting!</p>
-                  <p className="text-slate-300 text-xs mt-1">
-                    Pastikan nominal transfer sesuai dengan yang tertera. Transfer dengan nominal berbeda akan
-                    memperlambat proses verifikasi.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Back to Dashboard */}
+        <div className="text-center">
+          <Button
+            variant="outline"
+            onClick={() => (window.location.href = "/dashboard")}
+            className="border-slate-600 text-slate-300 hover:bg-slate-800"
+          >
+            Kembali ke Dashboard
+          </Button>
+        </div>
       </div>
     </div>
   )
