@@ -65,6 +65,16 @@ interface TeamMember {
   student_id?: string
 }
 
+interface Address {
+  street: string
+  rtRw?: string
+  village: string
+  district: string
+  city: string
+  province: string
+  postalCode: string
+}
+
 interface Participant {
   id: string
   status: string
@@ -80,7 +90,7 @@ interface Participant {
     phone: string
     school: string
     grade: string
-    address: string
+    address: Address
     birth_date: string
     gender: string
   }
@@ -454,9 +464,7 @@ export function AdminPanel({ userData }: AdminPanelProps) {
           <div className="flex items-center gap-2 text-slate-300">
             <MapPin className="w-4 h-4 text-slate-400" />
             <span>
-              {member.address
-                ? `${member.address.street}, ${member.address.rtRw ? `RT/RW ${member.address.rtRw}, ` : ""}${member.address.village}, ${member.address.district}, ${member.address.city}, ${member.address.province}, ${member.address.postalCode}`
-                : "Tidak ada"}
+              {member.address || "Tidak ada"}
             </span>
           </div>
           <div className="flex items-center gap-2 text-slate-300">
@@ -878,36 +886,55 @@ export function AdminPanel({ userData }: AdminPanelProps) {
                                   <Button
                                     variant="outline"
                                     size="sm"
-                                    onClick={async () => {
-                                      if (participant.payment_proof_url) {
-                                        const urlParts = participant.payment_proof_url.split("/")
-                                        const filePath = urlParts[urlParts.length - 1]
+                                  onClick={async () => {
+  if (participant.payment_proof_url) {
+    const url = participant.payment_proof_url;
+    const isPdf = url.toLowerCase().endsWith(".pdf");
 
-                                        try {
-                                          const response = await fetch(`/api/storage/signed-url?filePath=${filePath}`)
-                                          if (response.ok) {
-                                            const { signedUrl } = await response.json()
-                                            setCurrentProofUrl(signedUrl)
-                                            setIsProofModalOpen(true)
-                                          } else {
-                                            const errorData = await response.json()
-                                            toast({
-                                              title: `Failed to get signed URL: ${errorData.error}`,
-                                              variant: "destructive",
-                                            })
-                                          }
-                                        } catch (error) {
-                                          console.error("Error fetching signed URL:", error)
-                                          toast({
-                                            title: "Terjadi kesalahan saat mengambil bukti pembayaran",
-                                            variant: "destructive",
-                                          })
-                                        }
-                                      }
-                                    }}
+    // Ekstrak HANYA nama file dari URL
+    const urlParts = url.split("/");
+    const filePath = urlParts[urlParts.length - 1]; // <-- PERUBAHAN DI SINI
+
+    if (!filePath) {
+      toast({
+        title: "URL Bukti pembayaran tidak valid.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/storage/signed-url?filePath=${encodeURIComponent(filePath)}`);
+      if (!response.ok) {
+        const errorData = await response.json();
+        toast({
+          title: `Gagal mendapatkan URL: ${errorData.error || 'Unknown error'}`,
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      const { signedUrl } = await response.json();
+
+      if (isPdf) {
+        window.open(signedUrl, '_blank', 'noopener,noreferrer');
+      } else {
+        setCurrentProofUrl(signedUrl);
+        setIsProofModalOpen(true);
+      }
+
+    } catch (error) {
+      console.error("Error fetching signed URL:", error);
+      toast({
+        title: "Terjadi kesalahan saat mengambil bukti pembayaran",
+        variant: "destructive",
+      });
+    }
+  }
+}}
                                     className="text-xs bg-blue-600 hover:bg-blue-700 text-white"
                                   >
-                                    Lihat Bukti Bayar
+                                    Lihat Bukti Bayar dan Berkas
                                   </Button>
                                 )}
                               </div>
@@ -925,19 +952,19 @@ export function AdminPanel({ userData }: AdminPanelProps) {
       </Tabs>
 
       <Dialog open={isProofModalOpen} onOpenChange={setIsProofModalOpen}>
-        <DialogContent className="sm:max-w-[600px] bg-slate-900 text-white border-slate-700">
+        <DialogContent className="sm:max-w-4xl w-[90%] bg-slate-900 text-white border-slate-700">
           <DialogHeader>
             <DialogTitle className="text-white">Bukti Pembayaran</DialogTitle>
           </DialogHeader>
           <div className="flex justify-center items-center p-4">
             {currentProofUrl ? (
               <img
-                src={currentProofUrl || "/placeholder.svg"}
+                src={currentProofUrl}
                 alt="Bukti Pembayaran"
                 className="max-w-full h-auto rounded-md"
               />
             ) : (
-              <p>Tidak ada bukti pembayaran untuk ditampilkan.</p>
+              <p>Gagal memuat gambar.</p>
             )}
           </div>
         </DialogContent>

@@ -88,7 +88,7 @@ export function CountdownTimer({ expiresAt, onExpire }: CountdownTimerProps) {
       <Clock className="h-4 w-4" />
       <span className="text-sm font-medium">
         {/* Updated display text */}
-        Harap transfer sebelum: {formatTime(timeLeft.hours, timeLeft.minutes, timeLeft.seconds)}
+        Harap selesaikan/transfer sebelum: {formatTime(timeLeft.hours, timeLeft.minutes, timeLeft.seconds)}
       </span>
     </div>
   )

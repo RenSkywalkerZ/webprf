@@ -1,9 +1,15 @@
+// app/api/team-members/[registrationId]/route.ts
+
 import { getServerSession } from "next-auth/next"
 import { authOptions } from "@/auth"
 import { type NextRequest, NextResponse } from "next/server"
 import { supabaseAdmin } from "@/lib/supabase"
 
-export async function GET(request: NextRequest, { params }: { params: { registrationId: string } }) {
+export async function GET(
+  request: NextRequest,
+  // TERIMA SELURUH OBJEK KONTEKS DI SINI
+  context: { params: { registrationId: string } }
+) {
   try {
     const session = await getServerSession(authOptions)
 
@@ -11,7 +17,8 @@ export async function GET(request: NextRequest, { params }: { params: { registra
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const { registrationId } = params
+    // AKSES PARAMS MELALUI OBJEK KONTEKS
+    const { registrationId } = context.params
 
     if (!registrationId) {
       return NextResponse.json({ error: "Registration ID is required" }, { status: 400 })

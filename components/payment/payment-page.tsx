@@ -19,6 +19,7 @@ import {
   Users,
   User,
   CreditCardIcon as CardIcon,
+  Car,
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 
@@ -58,7 +59,6 @@ interface TeamMember {
   identity_number: string
   address: string
   birth_date: string
-  birth_place: string
   gender: string
   role: string
 }
@@ -148,21 +148,21 @@ export function PaymentPage({ competitionId, batchId, registrationId, isTeamRegi
     const file = event.target.files?.[0]
     if (file) {
       // Validate file type
-      const allowedTypes = ["image/jpeg", "image/jpg", "image/png"]
+      const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "application/pdf"]
       if (!allowedTypes.includes(file.type)) {
         toast({
           title: "Format File Tidak Valid",
-          description: "Hanya file gambar (JPEG, dan PNG) yang diperbolehkan",
+          description: "Hanya file gambar (JPG, JPEG, dan PNG) dan PDF yang diperbolehkan",
           variant: "destructive",
         })
         return
       }
 
-      // Validate file size (max 2MB)
-      if (file.size > 2 * 1024 * 1024) {
+      // Validate file size (max 10MB)
+      if (file.size > 10 * 1024 * 1024) {
         toast({
           title: "File Terlalu Besar",
-          description: "Ukuran file maksimal 2MB",
+          description: "Ukuran file maksimal 10MB",
           variant: "destructive",
         })
         return
@@ -201,7 +201,7 @@ export function PaymentPage({ competitionId, batchId, registrationId, isTeamRegi
       if (response.ok) {
         toast({
           title: "Bukti Pembayaran Berhasil Diunggah!",
-          description: "Pembayaran Anda sedang diverifikasi oleh admin. Anda akan mendapat notifikasi melalui email.",
+          description: "Pembayaran Anda akan diverifikasi oleh admin. Hubungi admin jika ada pertanyaan.",
         })
 
         // Update registration state
@@ -432,8 +432,8 @@ export function PaymentPage({ competitionId, batchId, registrationId, isTeamRegi
                           <p className="text-white">{member.school}</p>
                         </div>
                         <div>
-                          <p className="text-slate-400">Kelas</p>
-                          <p className="text-white">Kelas {member.grade}</p>
+                          <p className="text-slate-400">Kelas/Jenjang</p>
+                          <p className="text-white">{member.grade}</p>
                         </div>
                       </div>
                     </div>
@@ -457,15 +457,15 @@ export function PaymentPage({ competitionId, batchId, registrationId, isTeamRegi
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-slate-400">Bank:</span>
-                    <span className="text-white font-medium">BCA</span>
+                    <span className="text-white font-medium">blu by BCA</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-slate-400">No. Rekening:</span>
-                    <span className="text-white font-medium">1234567890</span>
+                    <span className="text-white font-medium">006749948216</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-slate-400">Atas Nama:</span>
-                    <span className="text-white font-medium">PRF XIII Committee</span>
+                    <span className="text-white font-medium">Aubin Athaya Raihan Setiawan</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-slate-400">Jumlah:</span>
@@ -492,34 +492,53 @@ export function PaymentPage({ competitionId, batchId, registrationId, isTeamRegi
               <CardHeader>
                 <CardTitle className="text-white flex items-center gap-2">
                   <Upload className="w-5 h-5 text-blue-400" />
-                  Upload Bukti Pembayaran
+                  Upload Bukti Pembayaran, Foto, Identitas, dan Twibbon 
                 </CardTitle>
-                <CardDescription>Upload foto/screenshot bukti transfer pembayaran</CardDescription>
+                <CardDescription>Unggah dokumen berikut: (1) bukti transfer; (2) foto diri; (3) kartu identitas; dan (4) twibbon yang telah dipasang.
+                  Bagi peserta lomba ber-tim, seluruh dokumen tersebut wajib dikumpulkan untuk setiap anggota tim lomba.
+                  Lalu semua dokumen digabungkan jadi satu dan dikirim dalam format .pdf, .jpeg, .jpg, atau .png.</CardDescription>
               </CardHeader>
+              <CardContent className="space-y-4">
+              <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-4">
+                <h4 className="text-amber-300 font-medium mb-2">Dokumen yang Wajib Diunggah:</h4>
+                <ul className="text-amber-100 text-sm space-y-1">
+                  <li>• Bukti transfer</li>
+                  <li>• Foto diri peserta (jika tim, seluruh anggota tim)</li>
+                  <li>• Kartu identitas peserta (jika tim, seluruh anggota tim)</li>
+                  <li>• Twibbon yang telah dipasang (jika tim, seluruh anggota tim)</li>
+                </ul>
+                <p className="text-amber-100 text-sm mt-2">
+                  Seluruh dokumen di atas digabungkan jadi satu (merge) dan dikirim dalam format <span className="font-medium">.pdf, .jpeg, .jpg,</span> atau <span className="font-medium">.png</span>.
+                </p>
+                <p className="text-amber-100 text-sm mt-2">
+                  (Bisa menggunakan layanan seperti <a href="https://ilovepdf.com" className="text-blue-400 underline" target="_blank" rel="noopener noreferrer">ilovepdf.com</a> untuk menggabungkan/merge file).
+                </p>
+              </div>
+              </CardContent>
               <CardContent className="space-y-4">
                 <div>
                   <Label htmlFor="payment-proof" className="text-white">
-                    File Bukti Pembayaran *
+                    Upload file <p className="text-red-500 inline">*</p>
                   </Label>
                   <Input
                     id="payment-proof"
                     type="file"
-                    accept="image/*"
+                    accept="image/jpeg, image/jpg, image/png, application/pdf"
                     onChange={handleFileChange}
                     className="bg-slate-800 border-slate-700 text-white file:bg-slate-700 file:text-white file:border-0 file:mr-4 file:py-2 file:px-4 file:rounded-md"
                   />
-                  <p className="text-slate-400 text-sm mt-1">Format: JPG, JPEG dan PNG Maksimal 2MB (Kompres bila terlalu besar: <a href="https://tinyjpg.com/" className="text-blue-400 underline" target="_blank" rel="noopener noreferrer">tinyjpg.com</a>, mohon maaf atas ketidaknyamanan ini.)</p>
+                  <p className="text-slate-400 text-sm mt-1">Format: JPG, JPEG, PNG, dan PDF Maksimal 10MB (Kompres bila terlalu besar: <a href="https://tinyjpg.com/" className="text-blue-400 underline" target="_blank" rel="noopener noreferrer">tinyjpg.com</a>, <a href="https://ilovepdf.com/" className="text-blue-400 underline" target="_blank" rel="noopener noreferrer">ilovepdf.com</a>. Terima kasih atas pengertiannya.)</p>
                 </div>
 
                 <div>
                   <Label htmlFor="notes" className="text-white">
-                    Catatan (Opsional)
+                    Catatan (Nama Pemilik Rekening pada Bukti Pembayaran)
                   </Label>
                   <Textarea
                     id="notes"
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
-                    placeholder="Tambahkan catatan jika diperlukan..."
+                    placeholder="Masukkan nama pemilik rekening pada bukti pembayaran"
                     className="bg-slate-800 border-slate-700 text-white"
                   />
                 </div>

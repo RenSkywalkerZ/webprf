@@ -1,7 +1,7 @@
 "use client"
 import { useState, useEffect } from "react"
 import type React from "react"
-
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog"
@@ -16,6 +16,7 @@ interface PersonalInformationProps {
 }
 
 export function PersonalInformation({ userData, onUpdateUser }: PersonalInformationProps) {
+  const router = useRouter()
   const { toast } = useToast()
 
   // --- KEY CHANGE 1: The form state is now initialized directly from props ---
@@ -157,13 +158,12 @@ export function PersonalInformation({ userData, onUpdateUser }: PersonalInformat
     e.preventDefault()
 
     if (!validateForm()) {
-      setConfirmationDialog({
-        isOpen: true,
-        type: "error",
-        title: "Form Tidak Valid",
-        description: "Mohon lengkapi semua field yang wajib diisi sebelum menyimpan.",
-      })
-      return
+      toast({
+          title: "Form Tidak Valid",
+          description: "Mohon lengkapi semua field yang wajib diisi sebelum menyimpan.",
+          variant: "destructive", // Gunakan variant 'destructive' untuk error
+        });
+        return;
     }
 
     setIsLoading(true)
@@ -201,35 +201,27 @@ export function PersonalInformation({ userData, onUpdateUser }: PersonalInformat
           onUpdateUser(data.user)
         }
 
-        setConfirmationDialog({
-          isOpen: true,
-          type: "success",
-          title: "Profil Berhasil Diperbarui!",
-          description: "Semua perubahan telah disimpan dengan sukses.",
-        })
-
         toast({
           title: "Profil Berhasil Diperbarui",
           description: "Semua perubahan telah disimpan dengan sukses.",
-          variant: "default",
         })
+        router.refresh()
       } else {
-        setConfirmationDialog({
-          isOpen: true,
-          type: "error",
-          title: "Gagal Memperbarui Profil",
-          description: `Terjadi kesalahan: ${data.error}. Silakan coba lagi.`,
-        })
+        toast({
+                title: "Gagal Memperbarui Profil",
+                description: `Terjadi kesalahan: ${data.error}. Silakan coba lagi.`,
+                variant: "destructive",
+        });
       }
     } catch (error) {
-      setConfirmationDialog({
-        isOpen: true,
-        type: "error",
-        title: "Kesalahan Sistem",
-        description: "Terjadi kesalahan saat memperbarui profil. Silakan periksa koneksi internet Anda dan coba lagi.",
-      })
+        // CUKUP GUNAKAN INI
+        toast({
+            title: "Kesalahan Sistem",
+            description: "Terjadi kesalahan saat memperbarui profil. Silakan periksa koneksi Anda.",
+            variant: "destructive",
+        });
     } finally {
-      setIsLoading(false)
+        setIsLoading(false);
     }
   }
 
@@ -261,7 +253,13 @@ export function PersonalInformation({ userData, onUpdateUser }: PersonalInformat
           <CardDescription>
             {isAdmin
               ? "Sebagai administrator, Anda hanya perlu mengatur informasi dasar akun"
-              : "Pastikan semua informasi yang Anda masukkan akurat dan sesuai dengan dokumen resmi"}
+              : " ⚠ Pastikan semua informasi yang Anda masukkan sesuai agar memudahkan proses verifikasi dan komunikasi."}
+          </CardDescription>
+          <CardDescription>
+            1. Bagi yang ingin mendaftar lomba individu (Physics Competition) silakan isi dengan sesuai dan benar.
+          </CardDescription>
+          <CardDescription>
+            2. Bagi yang ingin mendaftar lomba tim (selain Physics Competition) silakan isi laman ini seperlunya (Boleh diisi oleh perwakilan tim, seperti guru atau wali murid). Data semua anggota tim akan diisi di laman Pendaftaran Kompetisi
           </CardDescription>
         </CardHeader>
         <CardContent>

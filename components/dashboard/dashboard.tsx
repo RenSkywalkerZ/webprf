@@ -14,6 +14,50 @@ interface DashboardProps {
   userData: any;
 }
 
+// --- PERUBAHAN 1: Tambahkan fungsi kalkulasi kelengkapan profil ---
+// Fungsi ini diadaptasi dari personal-information.tsx untuk bekerja dengan data langsung dari server.
+const calculateProfileCompletion = (userData: any) => {
+  if (!userData || userData.role === 'admin') {
+    // Admin dianggap selalu 100% atau tidak relevan
+    return 100;
+  }
+
+  // Pastikan alamat adalah objek, bukan string JSON
+  let addressData = userData.address;
+  if (typeof addressData === 'string') {
+    try {
+      addressData = JSON.parse(addressData);
+    } catch (e) {
+      addressData = {}; // Jika parsing gagal, anggap sebagai objek kosong
+    }
+  }
+
+  const requiredFields = [
+    userData.full_name,
+    userData.email,
+    userData.phone,
+    userData.date_of_birth,
+    addressData?.street,
+    addressData?.village,
+    addressData?.district,
+    addressData?.city,
+    addressData?.province,
+    userData.education_level,
+    userData.gender,
+  ];
+
+  // Tambahkan 'school' jika jenjang pendidikan bukan 'umum'
+  if (userData.education_level && userData.education_level !== 'umum') {
+    requiredFields.push(userData.school);
+  }
+
+  const completedFields = requiredFields.filter(
+    (field) => field && String(field).trim() !== ''
+  ).length;
+  
+  return Math.round((completedFields / requiredFields.length) * 100);
+};
+
 export function Dashboard({
   userData: initialUserData,
 }: DashboardProps) {
@@ -26,6 +70,9 @@ export function Dashboard({
 
   // This component now receives userData directly from the server and does not manage its own state for it.
   // Updates to user data will need to trigger a re-fetch or server action from the parent Server Component.
+
+ // --- PERUBAHAN 2: Hitung kelengkapan profil ---
+  const profileCompletion = calculateProfileCompletion(initialUserData);
 
   const handleRegisterCompetition = (
     competitionId: string,
@@ -81,10 +128,12 @@ export function Dashboard({
 
   return (
     <div className="min-h-screen bg-black">
+      {/* --- PERUBAHAN 3: Teruskan `profileCompletion` ke Sidebar --- */}
       <DashboardSidebar
         activeSection={activeSection}
         onSectionChange={setActiveSection}
         userData={initialUserData}
+        profileCompletion={profileCompletion} // Prop baru ditambahkan di sini
       />
       <div className="lg:pl-80">
         <main className="p-6">{renderContent()}</main>

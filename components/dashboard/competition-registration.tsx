@@ -1,9 +1,9 @@
 "use client"
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Trophy, CheckCircle, BookOpen, Clock, Info, CreditCard, AlertCircle, AlertTriangle, Users } from "lucide-react"
+import { Trophy, CheckCircle, BookOpen, Clock, Info, CreditCard, AlertCircle, AlertTriangle, Users, Car } from "lucide-react"
 import { CountdownTimer } from "@/components/ui/countdown-timer"
 
 interface Competition {
@@ -46,6 +46,8 @@ export function CompetitionRegistration({ userData, onRegisterCompetition }: Com
   const [isLoading, setIsLoading] = useState(true)
   const [registrationClosed, setRegistrationClosed] = useState(false)
   const [competitionPrices, setCompetitionPrices] = useState<Record<string, string>>({})
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [pendingCompetitionId, setPendingCompetitionId] = useState<string | null>(null);
 
   // Define which competitions are team-based using the correct UUIDs
   const teamCompetitionUUIDs = [
@@ -206,70 +208,84 @@ export function CompetitionRegistration({ userData, onRegisterCompetition }: Com
     }).format(price)
   }
 
-  const handleRegister = async (competitionId: string) => {
-    if (registrationClosed) {
-      alert("Pendaftaran sedang ditutup sementara untuk rekapitulasi data.")
-      return
-    }
+  const handleRegister = (competitionId: string) => {
+  // 1. Simpan ID kompetisi yang dipilih
+  setPendingCompetitionId(competitionId);
+  // 2. Buka modal konfirmasi
+  setIsModalOpen(true);
+};
 
-    // Check if user already has an approved registration or pending with payment proof
-    const hasApprovedRegistration = registrations.some((reg) => reg.status === "approved")
-    const hasPendingWithPayment = registrations.some((reg) => reg.status === "pending" && reg.payment_proof_url)
+const handleCancelRegistration = () => {
+  // Cukup tutup modal dan reset state
+  setIsModalOpen(false);
+  setPendingCompetitionId(null);
+};
 
-    if (hasApprovedRegistration || hasPendingWithPayment) {
-      alert(
-        "Anda sudah terdaftar di salah satu kompetisi atau sedang dalam proses verifikasi. Setiap peserta hanya dapat mendaftar satu kompetisi.",
-      )
-      return
-    }
+const handleConfirmRegistration = async () => {
+  // Pastikan ada kompetisi yang dipilih
+  if (!pendingCompetitionId) return;
 
-    try {
-      const isTeamCompetition = teamCompetitionUUIDs.includes(competitionId)
-
-      const response = await fetch("/api/competitions/register", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          competitionId,
-          batchNumber: currentBatchId,
-          isTeamRegistration: isTeamCompetition,
-        }),
-      })
-
-      const data = await response.json()
-
-      if (response.ok) {
-        // Add to registrations with pending status
-        const newRegistration: Registration = {
-          id: data.registration.id,
-          competition_id: competitionId,
-          status: "pending",
-          created_at: new Date().toISOString(),
-          expires_at: data.expiresAt,
-          is_team_registration: isTeamCompetition,
-        }
-        setRegistrations((prev) => [...prev, newRegistration])
-
-        onRegisterCompetition(competitionId, currentBatchId || 1)
-
-        // Redirect based on competition type
-        if (isTeamCompetition) {
-          // Redirect to team registration form
-          window.location.href = `/team-registration?competition=${competitionId}&batch=${currentBatchId || 1}&registration=${data.registration.id}`
-        } else {
-          // Redirect to payment page directly for individual competitions
-          window.location.href = `/payment?competition=${competitionId}&batch=${currentBatchId || 1}&registration=${data.registration.id}`
-        }
-      } else {
-        alert("Gagal mendaftar: " + data.error)
-      }
-    } catch (error) {
-      console.error("Registration error:", error)
-      alert("Terjadi kesalahan saat mendaftar")
-    }
+  // --- Mulai Logika Pendaftaran Asli ---
+  if (registrationClosed) {
+    alert("Pendaftaran sedang ditutup sementara untuk rekapitulasi data.");
+    return;
   }
+
+  const hasApprovedRegistration = registrations.some((reg) => reg.status === "approved");
+  const hasPendingWithPayment = registrations.some((reg) => reg.status === "pending" && reg.payment_proof_url);
+
+  if (hasApprovedRegistration || hasPendingWithPayment) {
+    alert(
+      "Anda sudah terdaftar di salah satu kompetisi atau sedang dalam proses verifikasi. Setiap peserta hanya dapat mendaftar satu kompetisi.",
+    );
+    handleCancelRegistration(); // Tutup modal setelah alert
+    return;
+  }
+
+  try {
+    const isTeamCompetition = teamCompetitionUUIDs.includes(pendingCompetitionId);
+
+    const response = await fetch("/api/competitions/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        competitionId: pendingCompetitionId,
+        batchNumber: currentBatchId,
+        isTeamRegistration: isTeamCompetition,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      const newRegistration: Registration = {
+        id: data.registration.id,
+        competition_id: pendingCompetitionId,
+        status: "pending",
+        created_at: new Date().toISOString(),
+        expires_at: data.expiresAt,
+        is_team_registration: isTeamCompetition,
+      };
+      setRegistrations((prev) => [...prev, newRegistration]);
+      onRegisterCompetition(pendingCompetitionId, currentBatchId || 1);
+
+      if (isTeamCompetition) {
+        window.location.href = `/team-registration?competition=${pendingCompetitionId}&batch=${currentBatchId || 1}&registration=${data.registration.id}`;
+      } else {
+        window.location.href = `/payment?competition=${pendingCompetitionId}&batch=${currentBatchId || 1}&registration=${data.registration.id}`;
+      }
+    } else {
+      alert("Gagal mendaftar: " + data.error);
+    }
+  } catch (error) {
+    console.error("Registration error:", error);
+    alert("Terjadi kesalahan saat mendaftar");
+  } finally {
+    // Tutup modal setelah semua proses selesai
+    handleCancelRegistration();
+  }
+  // --- Selesai Logika Pendaftaran Asli ---
+};
 
   const getRegistrationStatus = (competitionId: string) => {
     const registration = registrations.find((r) => r.competition_id === competitionId)
@@ -780,6 +796,51 @@ export function CompetitionRegistration({ userData, onRegisterCompetition }: Com
           </CardContent>
         </Card>
       )}
+      {isModalOpen && (
+      <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+        <Card className="bg-slate-900 border-slate-700 w-full max-w-md animate-in fade-in-0 zoom-in-95">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-amber-400">
+              <AlertTriangle className="w-6 h-6" />
+              Konfirmasi Pendaftaran
+            </CardTitle>
+            <CardDescription className="text-slate-400 pt-2">
+              Setiap peserta hanya dapat mendaftar untuk <strong>SATU</strong> kompetisi.
+              Apakah Anda yakin ingin melanjutkan?
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-slate-300 text-sm mb-4 bg-slate-800/50 p-3 rounded-lg">
+              Anda akan mendaftar untuk kompetisi:{" "}
+              <strong className="text-white">
+                {competitions.find(c => c.id === pendingCompetitionId)?.title || ""}
+              </strong>
+            </p>
+          </CardContent>
+          <CardContent>
+            <p className="text-slate-400 text-sm">
+              Setelah menekan <strong className="text-white">Ya, Lanjutkan</strong>, Anda dianjurkan menyelesaikan pendaftaran ini. Pastikan Anda sudah memilih
+              kompetisi yang tepat. Diharap untuk tidak mendaftar lomba lain setelah ini.
+            </p>
+          </CardContent>
+          <CardFooter className="flex justify-end gap-3 bg-slate-900/50 p-4 rounded-b-lg">
+            <Button
+              variant="outline"
+              className="border-slate-600 text-slate-300 hover:bg-slate-800"
+              onClick={handleCancelRegistration}
+            >
+              Batal
+            </Button>
+            <Button
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+              onClick={handleConfirmRegistration}
+            >
+              Ya, Lanjutkan
+            </Button>
+          </CardFooter>
+        </Card>
+      </div>
+    )}
     </div>
   )
 }

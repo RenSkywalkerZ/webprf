@@ -262,19 +262,8 @@ export function UserDashboard({ userData }: UserDashboardProps) {
                     <p className="text-slate-300 text-sm">
                       {registrationInfo.paymentProof
                         ? "Bukti pembayaran Anda sedang diverifikasi oleh admin. Mohon tunggu konfirmasi lebih lanjut."
-                        : "Silakan upload bukti pembayaran untuk melanjutkan proses verifikasi."}
+                        : "Silakan lanjutkan pendaftaran/upload bukti pembayaran untuk melanjutkan proses verifikasi."}
                     </p>
-                    {!registrationInfo.paymentProof && (
-                      <Button
-                        size="sm"
-                        className="mt-3 bg-yellow-600 hover:bg-yellow-700 text-white"
-                        onClick={() =>
-                          (window.location.href = `/payment?registration=${registrationInfo.registration?.id}`)
-                        }
-                      >
-                        Upload Bukti Bayar
-                      </Button>
-                    )}
                   </div>
                 )}
 

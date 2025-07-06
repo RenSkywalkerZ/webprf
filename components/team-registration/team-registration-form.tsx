@@ -20,7 +20,6 @@ interface TeamMember {
   identity_number: string
   address: string
   birth_date: string
-  birth_place: string
   gender: string
 }
 
@@ -42,7 +41,6 @@ const initialMemberData: TeamMember = {
   identity_number: "",
   address: "",
   birth_date: "",
-  birth_place: "",
   gender: "",
 }
 
@@ -76,7 +74,6 @@ export function TeamRegistrationForm({
       "identity_number",
       "address",
       "birth_date",
-      "birth_place",
       "gender",
     ]
 
@@ -176,11 +173,12 @@ export function TeamRegistrationForm({
           </div>
         </div>
 
+        <p className="text-red-500 inline">* Wajib diisi</p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Nama Lengkap */}
           <div className="space-y-2">
             <Label htmlFor={`name-${memberIndex}`} className="text-white">
-              Nama Lengkap *
+              Nama Lengkap <p className="text-red-500 inline">*</p>
             </Label>
             <Input
               id={`name-${memberIndex}`}
@@ -195,7 +193,7 @@ export function TeamRegistrationForm({
           {/* Email */}
           <div className="space-y-2">
             <Label htmlFor={`email-${memberIndex}`} className="text-white">
-              Email *
+              Email <p className="text-red-500 inline">*</p>
             </Label>
             <Input
               id={`email-${memberIndex}`}
@@ -211,7 +209,7 @@ export function TeamRegistrationForm({
           {/* Nomor Telepon */}
           <div className="space-y-2">
             <Label htmlFor={`phone-${memberIndex}`} className="text-white">
-              Nomor Telepon *
+              Nomor Telepon <p className="text-red-500 inline">*</p>
             </Label>
             <Input
               id={`phone-${memberIndex}`}
@@ -226,7 +224,7 @@ export function TeamRegistrationForm({
           {/* Sekolah */}
           <div className="space-y-2">
             <Label htmlFor={`school-${memberIndex}`} className="text-white">
-              Asal Sekolah *
+              Asal Sekolah <p className="text-red-500 inline">*</p>
             </Label>
             <Input
               id={`school-${memberIndex}`}
@@ -241,16 +239,27 @@ export function TeamRegistrationForm({
           {/* Kelas */}
           <div className="space-y-2">
             <Label htmlFor={`grade-${memberIndex}`} className="text-white">
-              Kelas *
+              Kelas <p className="text-red-500 inline">*</p>
             </Label>
             <Select value={member.grade} onValueChange={(value) => updateMember(memberIndex, "grade", value)}>
               <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
                 <SelectValue placeholder="Pilih kelas" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="10">Kelas 10</SelectItem>
-                <SelectItem value="11">Kelas 11</SelectItem>
-                <SelectItem value="12">Kelas 12</SelectItem>
+                <SelectItem value="1">Kelas 1 (SD/Sederajat)</SelectItem>
+                <SelectItem value="2">Kelas 2 (SD/Sederajat)</SelectItem>
+                <SelectItem value="3">Kelas 3 (SD/Sederajat)</SelectItem>
+                <SelectItem value="4">Kelas 4 (SD/Sederajat)</SelectItem>
+                <SelectItem value="5">Kelas 5 (SD/Sederajat)</SelectItem>
+                <SelectItem value="6">Kelas 6 (SD/Sederajat)</SelectItem>
+                <SelectItem value="7">Kelas 7 (SMP/Sederajat)</SelectItem>
+                <SelectItem value="8">Kelas 8 (SMP/Sederajat)</SelectItem>
+                <SelectItem value="9">Kelas 9 (SMA/Sederajat)</SelectItem>
+                <SelectItem value="10">Kelas 10 (SMA/Sederajat)</SelectItem>
+                <SelectItem value="11">Kelas 11 (SMA/Sederajat)</SelectItem>
+                <SelectItem value="12">Kelas 12 (SMA/Sederajat)</SelectItem>
+                <SelectItem value="Univ/PT">Universitas/Perguruan Tinggi</SelectItem>
+                <SelectItem value="umum">Lainnya</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -258,7 +267,7 @@ export function TeamRegistrationForm({
           {/* Jenis Kelamin */}
           <div className="space-y-2">
             <Label htmlFor={`gender-${memberIndex}`} className="text-white">
-              Jenis Kelamin *
+              Jenis Kelamin <p className="text-red-500 inline">*</p>
             </Label>
             <Select value={member.gender} onValueChange={(value) => updateMember(memberIndex, "gender", value)}>
               <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
@@ -274,7 +283,7 @@ export function TeamRegistrationForm({
           {/* Jenis Identitas */}
           <div className="space-y-2">
             <Label htmlFor={`identity-type-${memberIndex}`} className="text-white">
-              Jenis Identitas *
+              Jenis Identitas <p className="text-red-500 inline">*</p>
             </Label>
             <Select
               value={member.identity_type}
@@ -286,8 +295,8 @@ export function TeamRegistrationForm({
               <SelectContent>
                 <SelectItem value="KTP">KTP</SelectItem>
                 <SelectItem value="Kartu Pelajar">Kartu Pelajar</SelectItem>
-                <SelectItem value="Kartu Keluarga">Kartu Keluarga</SelectItem>
-                <SelectItem value="Paspor">Paspor</SelectItem>
+                <SelectItem value="Kartu Tanda Mahasiswa">Kartu Tanda Mahasiswa/KTM</SelectItem>
+                <SelectItem value="Lainnya">Lainnya</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -295,7 +304,7 @@ export function TeamRegistrationForm({
           {/* Nomor Identitas */}
           <div className="space-y-2">
             <Label htmlFor={`identity-number-${memberIndex}`} className="text-white">
-              Nomor Identitas *
+              Nomor Identitas <p className="text-red-500 inline">*</p>
             </Label>
             <Input
               id={`identity-number-${memberIndex}`}
@@ -307,25 +316,10 @@ export function TeamRegistrationForm({
             />
           </div>
 
-          {/* Tempat Lahir */}
-          <div className="space-y-2">
-            <Label htmlFor={`birth-place-${memberIndex}`} className="text-white">
-              Tempat Lahir *
-            </Label>
-            <Input
-              id={`birth-place-${memberIndex}`}
-              value={member.birth_place}
-              onChange={(e) => updateMember(memberIndex, "birth_place", e.target.value)}
-              placeholder="Kota tempat lahir"
-              className="bg-slate-800 border-slate-700 text-white"
-              required
-            />
-          </div>
-
           {/* Tanggal Lahir */}
           <div className="space-y-2">
             <Label htmlFor={`birth-date-${memberIndex}`} className="text-white">
-              Tanggal Lahir *
+              Tanggal Lahir <p className="text-red-500 inline">*</p>
             </Label>
             <Input
               id={`birth-date-${memberIndex}`}
@@ -341,13 +335,13 @@ export function TeamRegistrationForm({
         {/* Alamat */}
         <div className="space-y-2">
           <Label htmlFor={`address-${memberIndex}`} className="text-white">
-            Alamat Lengkap *
+            Alamat <p className="text-red-500 inline">*</p>
           </Label>
           <Textarea
             id={`address-${memberIndex}`}
             value={member.address}
             onChange={(e) => updateMember(memberIndex, "address", e.target.value)}
-            placeholder="Alamat lengkap termasuk kota dan kode pos"
+            placeholder="Isi dengan alamat seperlunya"
             className="bg-slate-800 border-slate-700 text-white min-h-[100px]"
             required
           />

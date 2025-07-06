@@ -333,7 +333,7 @@ export function EducationFields({ formData, validationErrors, onInputChange, onF
     { value: "smp", label: "SMP/MTs" },
     { value: "sma", label: "SMA/MA/SMK" },
     { value: "universitas", label: "Universitas/Perguruan Tinggi" },
-    { value: "umum", label: "Masyarakat Umum" },
+    { value: "umum", label: "Guru/Wali/Masyarakat Umum" },
   ]
 
   const identityTypes = [

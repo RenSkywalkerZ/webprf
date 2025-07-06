@@ -52,7 +52,6 @@ export async function POST(request: NextRequest) {
       identity_number: member.identity_number,
       address: member.address,
       birth_date: member.birth_date,
-      birth_place: member.birth_place,
       gender: member.gender,
       role: index === 0 ? "leader" : "member", // First member is the leader
       created_at: new Date().toISOString(),

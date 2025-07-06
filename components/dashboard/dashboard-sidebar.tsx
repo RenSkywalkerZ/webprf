@@ -2,18 +2,19 @@
 import { useState } from "react"
 import { User, Trophy, FileText, LogOut, Menu, X, Shield, BarChart3, Users, Home, Settings } from "lucide-react"
 import { Button } from "@/components/ui/button"
-
+import { Lock } from "lucide-react" // Impor ikon gembok
 import { signOut } from "next-auth/react"
 
 interface DashboardSidebarProps {
   activeSection: string
   onSectionChange: (section: string) => void
   userData: any
+  profileCompletion: number
 }
 
-export function DashboardSidebar({ activeSection, onSectionChange, userData }: DashboardSidebarProps) {
+export function DashboardSidebar({ activeSection, onSectionChange, userData, profileCompletion }: DashboardSidebarProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-
+  
   // Admin menu items
   const adminMenuItems = [
     {
@@ -106,34 +107,58 @@ export function DashboardSidebar({ activeSection, onSectionChange, userData }: D
         </div>
       </div>
 
-      {/* Navigation Menu */}
       <nav className="flex-1 p-4">
         <div className="space-y-2">
-          {menuItems.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => {
-                onSectionChange(item.id)
-                setIsMobileMenuOpen(false)
-              }}
-              className={`
-                w-full flex items-start space-x-3 p-4 rounded-lg transition-all duration-200
-                ${
-                  activeSection === item.id
-                    ? userData?.role === "admin"
-                      ? "bg-gradient-to-r from-purple-500/20 to-pink-600/20 border border-purple-500/30 text-white"
-                      : "bg-gradient-to-r from-cyan-500/20 to-purple-600/20 border border-cyan-500/30 text-white"
-                    : "text-slate-300 hover:text-white hover:bg-slate-800/50"
-                }
-              `}
-            >
-              <item.icon className="w-5 h-5 mt-0.5 flex-shrink-0" />
-              <div className="text-left">
-                <div className="font-medium">{item.label}</div>
-                <div className="text-xs text-slate-400 mt-1">{item.description}</div>
+          {menuItems.map((item) => {
+            // --- PERUBAHAN 3: Tentukan apakah item menu harus dikunci ---
+            const isLocked =
+              userData?.role !== "admin" &&
+              profileCompletion < 100 &&
+              (item.id === "registration" || item.id === "details");
+
+            const lockedTooltip = isLocked
+              ? "Lengkapi profil Anda hingga 100% untuk membuka menu ini"
+              : "";
+
+            return (
+              <div key={item.id} title={lockedTooltip}>
+                <button
+                  onClick={() => {
+                    if (!isLocked) {
+                      onSectionChange(item.id)
+                      setIsMobileMenuOpen(false)
+                    }
+                  }}
+                  disabled={isLocked}
+                  className={`
+                    w-full flex items-start space-x-3 p-4 rounded-lg transition-all duration-200
+                    ${
+                      activeSection === item.id
+                        ? userData?.role === "admin"
+                          ? "bg-gradient-to-r from-purple-500/20 to-pink-600/20 border border-purple-500/30 text-white"
+                          : "bg-gradient-to-r from-cyan-500/20 to-purple-600/20 border border-cyan-500/30 text-white"
+                        : "text-slate-300 hover:text-white hover:bg-slate-800/50"
+                    }
+                    ${
+                      isLocked
+                        ? "cursor-not-allowed opacity-50 filter grayscale"
+                        : ""
+                    }
+                  `}
+                >
+                  <item.icon className="w-5 h-5 mt-0.5 flex-shrink-0" />
+                  <div className="text-left flex-grow">
+                    <div className="font-medium">{item.label}</div>
+                    <div className="text-xs text-slate-400 mt-1">{item.description}</div>
+                  </div>
+                  {/* --- PERUBAHAN 4: Tampilkan ikon gembok --- */}
+                  {isLocked && (
+                    <Lock className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                  )}
+                </button>
               </div>
-            </button>
-          ))}
+            );
+          })}
         </div>
       </nav>
 

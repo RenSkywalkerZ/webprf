@@ -18,8 +18,8 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (userError || !user) {
-      // Don't reveal if email exists or not for security
-      return NextResponse.json({ message: "If the email exists, a reset link has been sent" })
+      // Explicitly indicate email not found for frontend handling
+      return NextResponse.json({ emailFound: false })
     }
 
     // Generate reset token
@@ -40,17 +40,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Failed to generate reset token" }, { status: 500 })
     }
 
-    // Here you would normally send an email with the reset link
-    // For now, we'll just log it (in production, use a proper email service)
-    const resetLink = `${process.env.NEXTAUTH_URL}/auth/reset-password?token=${resetToken}`
-    console.log(`Reset link for ${email}: ${resetLink}`)
-
-    // In production, send email here
-    // await sendResetPasswordEmail(user.email, user.full_name, resetLink)
-
-    return NextResponse.json({
-      message: "If the email exists, a reset link has been sent",
-    })
+    // Return the reset token for frontend redirection
+    return NextResponse.json({ emailFound: true, resetToken: resetToken })
   } catch (error) {
     console.error("Forgot password error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })

@@ -130,13 +130,13 @@ export function CompetitionDetails({ userData }: CompetitionDetailsProps) {
   // Get WhatsApp link based on competition title
   const getWhatsappLink = (competitionTitle: string) => {
     const whatsappLinks: { [key: string]: string } = {
-      "Physics Competition": "https://chat.whatsapp.com/LINK_FISIKA",
-      "Depict Physics": "https://chat.whatsapp.com/LINK_DEPICT",
-      "Lomba Praktikum": "https://chat.whatsapp.com/LINK_PRAKTIKUM",
-      "Science Project": "https://chat.whatsapp.com/LINK_SCIENCE_PROJECT",
-      "Scientific Writing": "https://chat.whatsapp.com/LINK_SCIENTIFIC_WRITING",
-      "Cerdas Cermat": "https://chat.whatsapp.com/LINK_CERDAS_CERMAT",
-      "Roket Air": "https://chat.whatsapp.com/LINK_ROKET_AIR",
+      "Physics Competition": "",
+      "Depict Physics": "",
+      "Lomba Praktikum": "",
+      "Science Project": "",
+      "Scientific Writing": "",
+      "Cerdas Cermat": "",
+      "Roket Air": "",
     };
     return whatsappLinks[competitionTitle] || "#"; // Returns a fallback link '#' if not found
   };
@@ -600,11 +600,10 @@ export function CompetitionDetails({ userData }: CompetitionDetailsProps) {
                       <div className="bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border border-yellow-500/30 rounded-lg p-4">
                         <div className="flex items-center gap-2 mb-3">
                           <Clock className="w-5 h-5 text-yellow-400" />
-                          <span className="text-yellow-300 font-semibold">Menunggu Verifikasi Pembayaran</span>
+                          <span className="text-yellow-300 font-semibold">Menunggu Verifikasi</span>
                         </div>
                         <p className="text-slate-300 text-sm">
-                          Bukti pembayaran Anda sedang diverifikasi oleh admin. Proses ini biasanya memakan waktu
-                          maksimal 1x24 jam.
+                          Anda belum upload bukti pembayaran / bukti pembayaran Anda sedang diverifikasi oleh admin. Mohon tunggu.
                         </p>
                       </div>
                     )}
