@@ -1,3 +1,5 @@
+// Path: /api/admin/participants/route.ts
+
 import { getServerSession } from "next-auth/next"
 import { authOptions } from "@/auth"
 import { NextResponse } from "next/server"
@@ -12,6 +14,7 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    // Kueri yang sudah diperbaiki dengan alias
     const { data: participants, error } = await supabaseAdmin
       .from("registrations")
       .select(`
@@ -21,6 +24,7 @@ export async function GET() {
         registration_date,
         competition_id,
         payment_proof_url,
+        is_team_registration,
         users (
           id,
           email,
@@ -35,6 +39,20 @@ export async function GET() {
         competitions (
           id,
           title
+        ),
+        team_members (
+          id,
+          role,
+          full_name:name,
+          email,
+          phone,
+          school,
+          grade,
+          address,
+          date_of_birth:birth_date,
+          gender,
+          identity_type,
+          student_id:identity_number
         )
       `)
       .order("created_at", { ascending: false })

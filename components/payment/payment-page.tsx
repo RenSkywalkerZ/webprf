@@ -186,7 +186,7 @@ export function PaymentPage({ competitionId, batchId, registrationId, isTeamRegi
 
     try {
       const formData = new FormData()
-      formData.append("file", paymentProof)
+      formData.append("paymentProof", paymentProof)
       formData.append("registrationId", registrationId)
       formData.append("competitionId", competitionId)
       formData.append("notes", notes)

@@ -1,3 +1,5 @@
+// components/admin-panel.tsx
+
 "use client"
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -97,7 +99,6 @@ export function AdminPanel({ userData }: AdminPanelProps) {
   const [bulkStatus, setBulkStatus] = useState("")
   const [searchTerm, setSearchTerm] = useState("")
   const [filterStatus, setFilterStatus] = useState("all")
-  const [filterCompetition, setFilterCompetition] = useState("all")
   const [selectedCompetition, setSelectedCompetition] = useState("all")
   const [isLoading, setIsLoading] = useState(true)
   const [isExporting, setIsExporting] = useState(false)
@@ -111,30 +112,11 @@ export function AdminPanel({ userData }: AdminPanelProps) {
 
   const fetchData = async () => {
     try {
-      // Fetch participants
+      // Fetch participants (sudah termasuk data anggota tim dari API)
       const participantsResponse = await fetch("/api/admin/participants")
       if (participantsResponse.ok) {
         const { participants } = await participantsResponse.json()
-
-        // Fetch team members for team registrations
-        const participantsWithTeams = await Promise.all(
-          participants.map(async (participant: Participant) => {
-            if (participant.is_team_registration) {
-              try {
-                const teamResponse = await fetch(`/api/team-members/${participant.id}`)
-                if (teamResponse.ok) {
-                  const { teamMembers } = await teamResponse.json()
-                  return { ...participant, team_members: teamMembers }
-                }
-              } catch (error) {
-                console.error(`Error fetching team members for ${participant.id}:`, error)
-              }
-            }
-            return participant
-          }),
-        )
-
-        setParticipants(participantsWithTeams)
+        setParticipants(participants)
       }
 
       // Fetch competitions
@@ -165,6 +147,8 @@ export function AdminPanel({ userData }: AdminPanelProps) {
         return { text: "Menunggu", color: "bg-yellow-500/20 text-yellow-300 border-yellow-500/30", icon: Clock }
     }
   }
+  
+  // ... sisa kode tidak perlu diubah, biarkan sama seperti sebelumnya ...
 
   const getRoleBadge = (role: string) => {
     switch (role) {
