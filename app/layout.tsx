@@ -10,6 +10,9 @@ const inter = Inter({ subsets: ["latin"] })
 export const metadata: Metadata = {
   title: "PRF XIII",
   description: "- Pesta Rakyat Fisika XIII",
+  icons: {
+    icon: "/images/logo.png",
+  }
 }
 
 export default function RootLayout({
