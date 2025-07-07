@@ -3,7 +3,7 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Trophy, CheckCircle, BookOpen, Clock, Info, CreditCard, AlertCircle, AlertTriangle, Users, Car } from "lucide-react"
+import { Trophy, CheckCircle, BookOpen, Clock, Info, CreditCard, AlertCircle, AlertTriangle, Users, Phone, Bot, Rocket, FlaskConical, NotebookPen, CircuitBoard, Microscope, ImageIcon, Calculator } from "lucide-react"
 import { CountdownTimer } from "@/components/ui/countdown-timer"
 
 interface Competition {
@@ -12,6 +12,7 @@ interface Competition {
   description: string
   category: string
   color?: string
+  icon: string
   is_team_competition?: boolean
 }
 
@@ -48,6 +49,17 @@ export function CompetitionRegistration({ userData, onRegisterCompetition }: Com
   const [competitionPrices, setCompetitionPrices] = useState<Record<string, string>>({})
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [pendingCompetitionId, setPendingCompetitionId] = useState<string | null>(null);
+  const ICON_MAP: { [key: string]: React.ReactNode } = {
+    // nama ikon (dari DB) : komponen ikon
+    book: <BookOpen className="w-6 h-6 text-white" />,
+    rocket: <Rocket className="w-6 h-6 text-white" />,
+    lab: <FlaskConical className="w-6 h-6 text-white" />,
+    notebook: <NotebookPen className="w-6 h-6 text-white" />,
+    circuitBoard: <CircuitBoard className="w-6 h-6 text-white" />,
+    microscope: <Microscope className="w-6 h-6 text-white" />,
+    imageIcon: <ImageIcon className="w-6 h-6 text-white" />,
+    calculator: <Calculator className="w-6 h-6 text-white" />,
+  };
 
   // Define which competitions are team-based using the correct UUIDs
   const teamCompetitionUUIDs = [
@@ -506,6 +518,17 @@ const handleConfirmRegistration = async () => {
         </CardContent>
       </Card>
 
+      <Card className="bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border-blue-500/30">
+          <CardContent className="p-4"> {/* Mengatur padding menjadi lebih kecil */}
+            <div className="flex items-center gap-3">
+              <Phone className="w-5 h-5 text-blue-400 flex-shrink-0" />
+              <p className="text-slate-300 text-sm">
+                Butuh bantuan atau ada kendala pada sistem pendaftaran? Hubungi/WA: <strong className="text-white">0812 1843 8566 (Haekal)</strong>
+              </p>
+            </div>
+          </CardContent>
+      </Card>
+
       {/* Registration Status Alert */}
       {registrationClosed && (
         <Card className="bg-gradient-to-r from-red-500/10 to-orange-500/10 border-red-500/30">
@@ -583,6 +606,51 @@ const handleConfirmRegistration = async () => {
       </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card
+        key="manual-robotik"
+        className="bg-slate-900/50 border-slate-700 hover:border-slate-600 transition-colors" // Border & shadow ungu untuk pembeda
+      >
+        <CardHeader>
+          <div className="flex items-start justify-between">
+            <div className="flex items-center gap-3">
+              {/* Ikon untuk lomba tim (disesuaikan) */}
+              <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-indigo-600 rounded-lg flex items-center justify-center">
+                <Bot className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <CardTitle className="text-white text-lg">Lomba Robotik</CardTitle>
+                <div className="flex gap-2 mt-1">
+                  {/* Badge/Kategori manual */}
+                  <Badge variant="outline" className="text-xs border-slate-600 text-slate-300">
+                    TK - SMA/MA
+                  </Badge>
+                  <Badge className="text-xs bg-purple-500/20 text-purple-300 border-purple-500/30">
+                    Tim/Individu
+                  </Badge>
+                </div>
+              </div>
+            </div>
+          </div>
+        </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Deskripsi manual */}
+            <CardDescription className="text-slate-300 leading-relaxed">
+              Adu kreativitas dan kemampuan rekayasa dalam merancang, membangun, dan memprogram dalam bidang robotika untuk menyelesaikan misi yang menantang.
+            </CardDescription>
+
+            {/* Tombol dengan link manual */}
+            <div className="flex items-center justify-between pt-4 border-t border-slate-700">
+              {/* Ganti "#" dengan link ke form pendaftaran (misal: Google Form) */}
+              <a href="#" target="_blank" rel="noopener noreferrer">
+                <Button className="bg-purple-600 hover:bg-purple-700 text-white">
+                  <BookOpen className="w-4 h-4 mr-2" />
+                  Info Pendaftaran
+                </Button>
+              </a>
+            </div>
+          </CardContent>
+      </Card>
+        
         {competitions.map((competition: Competition) => {
           const price = competitionPrices[competition.id] || "Memuat..."
           const registrationStatus = getRegistrationStatus(competition.id)
@@ -598,14 +666,9 @@ const handleConfirmRegistration = async () => {
               <CardHeader>
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
-                    <div
-                      className={`w-12 h-12 bg-gradient-to-r ${competition.color || "from-blue-500 to-purple-600"} rounded-lg flex items-center justify-center`}
-                    >
-                      {isTeamCompetition ? (
-                        <Users className="w-6 h-6 text-white" />
-                      ) : (
-                        <Trophy className="w-6 h-6 text-white" />
-                      )}
+                    <div className={`w-12 h-12 bg-gradient-to-r ${competition.color || "from-blue-500 to-purple-600"} rounded-lg flex items-center justify-center`}>
+                      {/* Mengambil ikon dari map, atau fallback ke Trophy jika tidak ditemukan */}
+                      {ICON_MAP[competition.icon] || <Trophy className="w-6 h-6 text-white" />}
                     </div>
                     <div>
                       <CardTitle className="text-white text-lg">{competition.title}</CardTitle>
@@ -715,7 +778,7 @@ const handleConfirmRegistration = async () => {
                         {isTeamCompetition ? (
                           <>
                             <Users className="w-4 h-4" />
-                            Lanjutkan Pendaftaran
+                            Lanjutkan Pendaftaran/Pembayaran
                           </>
                         ) : (
                           <>

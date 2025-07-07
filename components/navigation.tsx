@@ -61,20 +61,6 @@ export function Navigation() {
               <Trophy size={16} />
               <span>Events</span>
             </a>
-            <a
-              href="#guidebook"
-              className="flex items-center space-x-2 text-white/90 hover:text-white transition-colors text-sm font-medium"
-            >
-              <BookOpen size={16} />
-              <span>Guidebook</span>
-            </a>
-            <a
-              href="#location"
-              className="flex items-center space-x-2 text-white/90 hover:text-white transition-colors text-sm font-medium"
-            >
-              <MapPin size={16} />
-              <span>Event Map</span>
-            </a>
           </div>
 
           {/* Mobile Menu Button */}

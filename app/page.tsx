@@ -14,7 +14,6 @@ export default function Home() {
       <IntroSection />
       <TimelineSection />
       <EventsSection />
-      <SponsorsSection />
       <Footer />
     </main>
   )

@@ -29,7 +29,7 @@ export function HeroSection() {
       />
 
       {/* Main Title */}
-      <div className="relative z-10 text-center px-4 -mt-[400px]">
+      <div className="relative z-10 text-center px-4 -mt-[300px]">
         <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black text-white mb-4 drop-shadow-[0_0_15px_rgba(79,199,254,0.7)]">
           PRF XIII
         </h1>

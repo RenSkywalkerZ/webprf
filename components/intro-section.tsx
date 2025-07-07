@@ -27,7 +27,7 @@ export function IntroSection() {
                 Pesta Rakyat Fisika XIII
               </h3>
               <p className="text-sm sm:text-base md:text-lg lg:text-xl text-slate-300 leading-relaxed max-w-2xl mx-auto lg:mx-0">
-                Kompetisi Fisika Nasional Tingkat SD hingga Perguruan Tinggi yang terdiri dari Olimpiade Fisika, Lomba
+                Kompetisi Fisika Nasional Tingkat TK hingga Perguruan Tinggi yang terdiri dari Olimpiade Fisika, Lomba
                 Robotik, dan berbagai macam kompetisi lainnya.
               </p>
             </div>

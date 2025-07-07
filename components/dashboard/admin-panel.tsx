@@ -784,7 +784,7 @@ export function AdminPanel({ userData }: AdminPanelProps) {
                                       </div>
                                       <div className="flex items-center gap-2 text-slate-300">
                                         <User className="w-4 h-4 text-slate-400" />
-                                        <span>Kelas {participant.users?.grade || "Tidak ada"}</span>
+                                        <span>Jenjang/Kelas: {participant.users?.grade || "Tidak ada"}</span>
                                       </div>
                                       <div className="flex items-center gap-2 text-slate-300">
                                         <MapPin className="w-4 h-4 text-slate-400" />

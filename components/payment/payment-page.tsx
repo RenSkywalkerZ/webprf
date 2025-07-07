@@ -503,7 +503,7 @@ export function PaymentPage({ competitionId, batchId, registrationId, isTeamRegi
                 <h4 className="text-amber-300 font-medium mb-2">Dokumen yang Wajib Diunggah:</h4>
                 <ul className="text-amber-100 text-sm space-y-1">
                   <li>• Bukti transfer</li>
-                  <li>• Foto diri peserta (jika tim, seluruh anggota tim)</li>
+                  <li>• Foto diri peserta setengah badan (jika tim, seluruh anggota tim)</li>
                   <li>• Kartu identitas peserta (jika tim, seluruh anggota tim)</li>
                   <li>• Twibbon yang telah dipasang (jika tim, seluruh anggota tim)</li>
                 </ul>

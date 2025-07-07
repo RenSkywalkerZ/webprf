@@ -25,12 +25,12 @@ export function TimelineSection() {
     {
       title: "Star Party",
       date: "31 Oktober 2025",
-      location: "Offline (The Location)",
+      location: "Offline (Balairung UI)",
     },
     {
       title: "Closing Ceremony",
       date: "1 November 2025",
-      location: "Offline (The Location)",
+      location: "Offline (Balairung UI)",
     },
   ]
 

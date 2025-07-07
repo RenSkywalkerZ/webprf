@@ -291,7 +291,7 @@ export function PersonalInformation({ userData, onUpdateUser }: PersonalInformat
 
                 <div className="space-y-6">
                   <h3 className="text-lg font-semibold text-white border-b border-slate-700 pb-2">
-                    Informasi Pendidikan
+                    Informasi Instansi Pendidikan
                   </h3>
                   <EducationFields
                     formData={formData}
