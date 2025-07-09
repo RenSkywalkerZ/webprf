@@ -3,7 +3,7 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Trophy, CheckCircle, BookOpen, Clock, Info, CreditCard, AlertCircle, AlertTriangle, Users, Phone, Bot, Rocket, FlaskConical, NotebookPen, CircuitBoard, Microscope, ImageIcon, Calculator, Loader2 } from "lucide-react"
+import { Trophy, CheckCircle, BookOpen, Clock, Info, CreditCard, AlertCircle, AlertTriangle, Users, Phone, Bot, Rocket, FlaskConical, NotebookPen, CircuitBoard, Microscope, ImageIcon, Calculator, Loader2, FilePenLine } from "lucide-react"
 import { CountdownTimer } from "@/components/ui/countdown-timer"
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog"
 import { useToast } from "@/hooks/use-toast"
@@ -635,50 +635,63 @@ const handleConfirmRegistration = async () => {
 
       {/* Competition Cards */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card
-        key="manual-robotik"
-        className="bg-slate-900/50 border-slate-700 hover:border-slate-600 transition-colors" // Border & shadow ungu untuk pembeda
-      >
-        <CardHeader>
-          <div className="flex items-start justify-between">
-            <div className="flex items-center gap-3">
-              {/* Ikon untuk lomba tim (disesuaikan) */}
-              <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-indigo-600 rounded-lg flex items-center justify-center">
-                <Bot className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <CardTitle className="text-white text-lg">Lomba Robotik</CardTitle>
-                <div className="flex gap-2 mt-1">
-                  {/* Badge/Kategori manual */}
-                  <Badge variant="outline" className="text-xs border-slate-600 text-slate-300">
-                    TK - SMA/MA
-                  </Badge>
-                  <Badge className="text-xs bg-purple-500/20 text-purple-300 border-purple-500/30">
-                    Tim/Individu
-                  </Badge>
-                </div>
-              </div>
-            </div>
+      <Card
+  key="manual-robotik"
+  className="bg-slate-900/50 border-slate-700 hover:border-slate-600 transition-colors" // Border & shadow ungu untuk pembeda
+>
+  <CardHeader>
+    <div className="flex items-start justify-between">
+      <div className="flex items-center gap-3">
+        {/* Ikon untuk lomba tim (disesuaikan) */}
+        <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-indigo-600 rounded-lg flex items-center justify-center">
+          <Bot className="w-6 h-6 text-white" />
+        </div>
+        <div>
+          <CardTitle className="text-white text-lg">Lomba Robotik</CardTitle>
+          <div className="flex gap-2 mt-1">
+            {/* Badge/Kategori manual */}
+            <Badge variant="outline" className="text-xs border-slate-600 text-slate-300">
+              TK - SMA/MA
+            </Badge>
+            <Badge className="text-xs bg-purple-500/20 text-purple-300 border-purple-500/30">
+              Tim/Individu
+            </Badge>
           </div>
-        </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Deskripsi manual */}
-            <CardDescription className="text-slate-300 leading-relaxed">
-              Adu kreativitas dan kemampuan rekayasa dalam merancang, membangun, dan memprogram dalam bidang robotika untuk menyelesaikan misi yang menantang.
-            </CardDescription>
+        </div>
+      </div>
+    </div>
+  </CardHeader>
+  <CardContent className="space-y-4">
+    {/* Deskripsi manual */}
+    <CardDescription className="text-slate-300 leading-relaxed">
+      Adu kreativitas dan kemampuan rekayasa dalam merancang, membangun, dan memprogram dalam bidang robotika untuk menyelesaikan misi yang menantang.
+    </CardDescription>
+    <CardDescription className="text-slate-300 leading-relaxed">
+      Silakan baca Guidebook pada <strong>"Info Pendaftaran"</strong>, pendaftaran dilakukan pada Google Form <strong>"Form Pendaftaran"</strong>
+    </CardDescription>
 
-            {/* Tombol dengan link manual */}
-            <div className="flex items-center justify-between pt-4 border-t border-slate-700">
-              {/* Ganti "#" dengan link ke form pendaftaran (misal: Google Form) */}
-              <a href="https://tinyurl.com/RobotikGBPRFXIII" target="_blank" rel="noopener noreferrer">
-                <Button className="bg-purple-600 hover:bg-purple-700 text-white">
-                  <BookOpen className="w-4 h-4 mr-2" />
-                  Info Pendaftaran
-                </Button>
-              </a>
-            </div>
-          </CardContent>
-      </Card>
+    {/* Tombol dengan link manual */}
+    {/* MODIFIED: Mengubah justify-between menjadi justify-start dan menambahkan gap-4 untuk memberi jarak antar tombol */}
+    <div className="flex items-center justify-start gap-4 pt-4 border-t border-slate-700">
+      {/* Tombol Info Pendaftaran */}
+      <a href="https://tinyurl.com/RobotikGBPRFXIII" target="_blank" rel="noopener noreferrer">
+        <Button className="bg-purple-600 hover:bg-purple-700 text-white">
+          <BookOpen className="w-4 h-4 mr-2" />
+          Info Pendaftaran
+        </Button>
+      </a>
+
+      {/* NEW: Tombol Form Pendaftaran */}
+      {/* Ganti "#" dengan link ke form pendaftaran yang sebenarnya */}
+      <a href="https://forms.gle/bnKV3fE5QJuqJNuZ9" target="_blank" rel="noopener noreferrer">
+        <Button variant="outline" className="border-purple-500/30 bg-purple-500/20 text-purple-300 hover:bg-purple-500/30">
+          <FilePenLine className="w-4 h-4 mr-2" /> {/* Ganti dengan ikon yang sesuai jika perlu */}
+          Form Pendaftaran
+        </Button>
+      </a>
+    </div>
+  </CardContent>
+</Card>
         
         {competitions.map((competition: Competition) => {
           const price = competitionPrices[competition.id] || "Memuat..."
