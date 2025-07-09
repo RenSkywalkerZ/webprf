@@ -923,7 +923,7 @@ const handleConfirmRegistration = async () => {
             <div className="flex items-center gap-3">
               <Phone className="w-5 h-5 text-blue-400 flex-shrink-0" />
               <p className="text-slate-300 text-sm">
-                Butuh bantuan atau ada kendala pada sistem pendaftaran? Hubungi/WA: <strong className="text-white">0812 1843 8566 (Haekal)</strong>
+                Butuh bantuan atau ada kendala pada sistem pendaftaran? Hubungi/WA: <strong className="text-white">0851 1738 5115 (Hugo)</strong>
               </p>
             </div>
           </CardContent>

@@ -114,14 +114,14 @@ export function CompetitionDetails({ userData }: CompetitionDetailsProps) {
         return [
           "⏳ Menunggu verifikasi pembayaran oleh admin",
           "📤 Harap upload bukti pembayaran beserta dokumen yang diperlukan jika belum dilakukan",
-          "💬 Hubungi admin jika ada pertanyaan",
+          "💬 Hubungi admin jika ada pertanyaan (Hugo: 0851 1738 5115) ",
           "⏰ Proses verifikasi maksimal 1x24 jam",
         ]
       case "rejected":
         return [
           "❌ Pembayaran tidak dapat diverifikasi",
           "📧 Cek email untuk alasan penolakan",
-          "💬 Hubungi admin untuk klarifikasi",
+          "💬 Hubungi admin untuk klarifikasi (Hugo: 0851 1738 5115)",
           "🔄 Lakukan pendaftaran ulang jika diperlukan",
         ]
       default:
@@ -612,7 +612,7 @@ export function CompetitionDetails({ userData }: CompetitionDetailsProps) {
                         </div>
                         <p className="text-slate-300 text-sm mb-4">
                           Pembayaran Anda tidak dapat diverifikasi. Silakan hubungi admin untuk informasi lebih lanjut
-                          atau lakukan pendaftaran ulang.
+                          atau lakukan pendaftaran ulang (Hugo: 0851 1738 5115).
                         </p>
                         <Button size="sm" className="bg-red-600 hover:bg-red-700 text-white">
                           <Phone className="w-4 h-4 mr-2" />
