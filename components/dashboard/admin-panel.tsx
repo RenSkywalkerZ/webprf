@@ -262,15 +262,16 @@ export function AdminPanel({ userData }: AdminPanelProps) {
     }
   }
 
+  // FUNGSI YANG DIPERBAIKI
   const handleBulkStatusChange = async () => {
     if (selectedParticipants.length === 0 || !bulkStatus) {
       toast({
         title: "Pilih peserta dan status terlebih dahulu",
         variant: "destructive",
-      })
-      return
+      });
+      return;
     }
-
+  
     try {
       const response = await fetch("/api/admin/participants/status", {
         method: "PUT",
@@ -281,32 +282,34 @@ export function AdminPanel({ userData }: AdminPanelProps) {
           participantIds: selectedParticipants,
           status: bulkStatus,
         }),
-      })
-
+      });
+  
       if (response.ok) {
-        setParticipants((prev) =>
-          prev.map((p: Participant) => (selectedParticipants.includes(p.id) ? { ...p, status: bulkStatus } : p)),
-        )
-        setSelectedParticipants([])
-        setBulkStatus("")
         toast({
           title: `Berhasil mengubah status ${selectedParticipants.length} peserta`,
           variant: "default",
-        })
+        });
+  
+        // Ambil ulang data dari server untuk memastikan UI sinkron
+        await fetchData();
+  
+        // Reset state setelah data dimuat ulang
+        setSelectedParticipants([]);
+        setBulkStatus("");
       } else {
         toast({
-          title: "Gagal mengubah status",
+          title: "Gagal mengubah status massal",
           variant: "destructive",
-        })
+        });
       }
     } catch (error) {
-      console.error("Error updating bulk status:", error)
+      console.error("Error updating bulk status:", error);
       toast({
         title: "Terjadi kesalahan saat mengubah status",
         variant: "destructive",
-      })
+      });
     }
-  }
+  };
 
   // FUNGSI EKSPOR CSV YANG TELAH DIPERBAIKI
   const exportToXlsx = (competitionId: string) => {

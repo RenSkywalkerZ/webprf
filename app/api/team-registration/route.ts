@@ -1,3 +1,5 @@
+// Salin dan ganti seluruh isi file: api/team-registration/route.ts
+
 import { getServerSession } from "next-auth/next"
 import { authOptions } from "@/auth"
 import { type NextRequest, NextResponse } from "next/server"
@@ -13,9 +15,32 @@ export async function POST(request: NextRequest) {
 
     const { registrationId, competitionId, teamMembers } = await request.json()
 
-    if (!registrationId || !competitionId || !teamMembers || teamMembers.length !== 3) {
-      return NextResponse.json({ error: "Missing required fields or invalid team size" }, { status: 400 })
+    // --- AWAL PERUBAHAN ---
+
+    // 1. Validasi dasar
+    if (!registrationId || !competitionId || !teamMembers) {
+      return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
+
+    // 2. Ambil max_team_size dari database
+    const { data: competition, error: compError } = await supabaseAdmin
+      .from("competitions")
+      .select("max_team_size")
+      .eq("id", competitionId)
+      .single()
+
+    if (compError || !competition) {
+      return NextResponse.json({ error: "Competition not found" }, { status: 404 })
+    }
+
+    // 3. Validasi ukuran tim secara dinamis
+    if (teamMembers.length !== competition.max_team_size) {
+      return NextResponse.json({ 
+        error: `Invalid team size. Expected ${competition.max_team_size}, but got ${teamMembers.length}` 
+      }, { status: 400 })
+    }
+    
+    // --- AKHIR PERUBAHAN ---
 
     // Verify that the registration belongs to the current user
     const { data: registration, error: regError } = await supabaseAdmin

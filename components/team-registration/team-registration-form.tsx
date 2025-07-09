@@ -1,8 +1,8 @@
-// File: components/team-registration/team-registration-form.tsx (Versi Baru)
+// File: components/team-registration/team-registration-form.tsx (Fixed Version)
 
 "use client"
-import { useState } from "react"
-// ... (semua import Anda yang lain tetap sama)
+import { useState, useMemo, useEffect } from "react" // Added useEffect
+// ... (all your other imports remain the same)
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -19,7 +19,8 @@ interface TeamRegistrationFormProps {
   competitionTitle: string;
   registrationId: string;
   batchId: number;
-  availableLevels: string[]; 
+  availableLevels: string[];
+  maxTeamSize : number; 
   onComplete: () => void;
 }
 
@@ -68,29 +69,48 @@ const ALL_CLASS_OPTIONS = [
   { value: "Umum", label: "Umum/Lainnya", level: "umum" },
 ];
 
-
 export function TeamRegistrationForm({
   competitionId,
   competitionTitle,
   registrationId,
   batchId,
   availableLevels,
+  maxTeamSize,
   onComplete,
 }: TeamRegistrationFormProps) {
   const [currentStep, setCurrentStep] = useState(0)
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([
-    { ...initialMemberData },
-    { ...initialMemberData },
-    { ...initialMemberData },
-  ])
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>(() => 
+    Array.from({ length: maxTeamSize }, () => ({ ...initialMemberData }))
+  );
   const [isSubmitting, setIsSubmitting] = useState(false)
   const { toast } = useToast()
 
-  // <-- PENAMBAHAN STATE BARU
   // State untuk menyimpan jenjang (level) yang dipilih oleh ketua tim
   const [selectedLevel, setSelectedLevel] = useState<string | null>(null);
 
-  const memberTitles = ["Ketua Tim", "Anggota 2", "Anggota 3"]
+  // NEW: Track when level changes to show toast
+  const [levelJustChanged, setLevelJustChanged] = useState(false);
+
+  // NEW: useEffect to handle toast when level changes
+  useEffect(() => {
+    if (levelJustChanged && selectedLevel) {
+      toast({ 
+        title: "Jenjang Terpilih", 
+        description: `Jenjang ${selectedLevel.toUpperCase()} telah ditetapkan. Anggota lain harus dari jenjang yang sama.` 
+      });
+      setLevelJustChanged(false); // Reset flag
+    }
+  }, [selectedLevel, levelJustChanged, toast]);
+
+  const memberTitles = useMemo(() => {
+    const titles = ["Ketua Tim"];
+    for (let i = 1; i < maxTeamSize; i++) {
+      titles.push(`Anggota ${i + 1}`);
+    }
+    return titles;
+  }, [maxTeamSize]);
+
+  const lastStepIndex = maxTeamSize - 1;
 
   const validateCurrentMember = (member: TeamMember): boolean => {
     const requiredFields = [
@@ -103,27 +123,25 @@ export function TeamRegistrationForm({
     })
   }
 
-  // <-- MODIFIKASI FUNGSI updateMember
+  // FIXED: Modified updateMember function
   const updateMember = (index: number, field: keyof TeamMember, value: string) => {
     setTeamMembers((prev) => {
       const updatedMembers = [...prev];
       updatedMembers[index] = { ...updatedMembers[index], [field]: value };
 
-      // LOGIKA BARU: Jika yang diubah adalah kelas Ketua Tim (index 0)
+      // FIXED: Handle level selection without calling toast directly
       if (index === 0 && field === "grade") {
         const selectedOption = ALL_CLASS_OPTIONS.find(opt => opt.value === value);
         const newLevel = selectedOption ? selectedOption.level : null;
 
-        // Jika jenjang berubah, update state dan reset pilihan kelas anggota lain
+        // If level changes, update state and reset other members' grades
         if (newLevel !== selectedLevel) {
           setSelectedLevel(newLevel);
-          // Kosongkan pilihan kelas anggota 2 & 3 agar mereka memilih ulang
+          setLevelJustChanged(true); // Set flag to trigger toast in useEffect
+          
+          // Reset other members' grades
           if (updatedMembers.length > 1) updatedMembers[1] = { ...updatedMembers[1], grade: "" };
           if (updatedMembers.length > 2) updatedMembers[2] = { ...updatedMembers[2], grade: "" };
-          
-          if (newLevel) {
-            toast({ title: "Jenjang Terpilih", description: `Jenjang ${newLevel.toUpperCase()} telah ditetapkan. Anggota lain harus dari jenjang yang sama.` });
-          }
         }
       }
 
@@ -131,14 +149,16 @@ export function TeamRegistrationForm({
     });
   };
 
-
   const handleNext = () => {
     if (!validateCurrentMember(teamMembers[currentStep])) {
       toast({ title: "Data Tidak Lengkap", description: "Mohon lengkapi semua field.", variant: "destructive" });
       return;
     }
-    if (currentStep < 2) setCurrentStep(currentStep + 1);
-    else handleSubmit();
+    if (currentStep < lastStepIndex) {
+      setCurrentStep(currentStep + 1);
+    } else {
+      handleSubmit();
+    }
   }
 
   const handlePrevious = () => {
@@ -168,30 +188,27 @@ export function TeamRegistrationForm({
     }
   }
 
-
   const renderMemberForm = (memberIndex: number) => {
     const member = teamMembers[memberIndex];
 
-    // <-- LOGIKA BARU UNTUK MEMFILTER KELAS
+    // Filter class options based on available levels
     let filteredClassOptions = ALL_CLASS_OPTIONS.filter(option => 
       availableLevels.includes(option.level)
     );
 
-    // Jika ini bukan ketua tim (index > 0) dan jenjang sudah dikunci oleh ketua,
-    // filter lebih lanjut berdasarkan jenjang tersebut.
+    // If not team leader and level is locked, filter further
     if (memberIndex > 0 && selectedLevel) {
       filteredClassOptions = filteredClassOptions.filter(option => 
         option.level === selectedLevel
       );
     }
-    // Jika ketua tim belum memilih, anggota lain tidak bisa memilih dulu
+    // If team leader hasn't chosen, other members can't choose
     else if (memberIndex > 0 && !selectedLevel) {
-       filteredClassOptions = []; // Kosongkan pilihan jika ketua belum memilih
+       filteredClassOptions = [];
     }
 
     return (
       <div className="space-y-6">
-        {/* ... (semua input form lainnya tetap sama: Nama, Email, dll) ... */}
         {/* Nama Lengkap */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
@@ -214,16 +231,17 @@ export function TeamRegistrationForm({
                 <Input id={`school-${memberIndex}`} value={member.school} onChange={(e) => updateMember(memberIndex, "school", e.target.value)} placeholder="Nama sekolah" className="bg-slate-800 border-slate-700 text-white" required />
             </div>
 
-            {/* --- PERUBAHAN DI BAGIAN KELAS --- */}
+            {/* Kelas */}
             <div className="space-y-2">
                 <Label htmlFor={`grade-${memberIndex}`} className="text-white">Kelas <span className="text-red-500">*</span></Label>
                 <Select 
                     value={member.grade} 
                     onValueChange={(value) => updateMember(memberIndex, "grade", value)}
-                    // Nonaktifkan dropdown jika ini anggota (bukan ketua) & ketua belum memilih kelas
                     disabled={memberIndex > 0 && !selectedLevel} 
                 >
-                <SelectTrigger className="bg-slate-800 border-slate-700 text-white"><SelectValue placeholder={memberIndex > 0 && !selectedLevel ? "Ketua tim harus memilih dulu" : "Pilih kelas"} /></SelectTrigger>
+                <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
+                  <SelectValue placeholder={memberIndex > 0 && !selectedLevel ? "Ketua tim harus memilih dulu" : "Pilih kelas"} />
+                </SelectTrigger>
                 <SelectContent>
                     {filteredClassOptions.length > 0 ? (
                     filteredClassOptions.map((option) => (
@@ -242,7 +260,7 @@ export function TeamRegistrationForm({
                 </SelectContent>
                 </Select>
             </div>
-            {/* ... (sisa input form: Jenis Kelamin, Identitas, dll, tetap sama) ... */}
+
             {/* Jenis Kelamin */}
             <div className="space-y-2">
                 <Label htmlFor={`gender-${memberIndex}`} className="text-white">Jenis Kelamin <span className="text-red-500">*</span></Label>
@@ -287,11 +305,10 @@ export function TeamRegistrationForm({
     );
   };
   
-  // Render JSX utama dari komponen (TETAP SAMA)
+  // Main JSX render
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4">
         <div className="max-w-4xl mx-auto">
-            {/* ... (JSX untuk Header dan Progress Steps tetap sama) ... */}
             <div className="text-center mb-8">
                 <div className="flex items-center justify-center gap-3 mb-4">
                     <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl flex items-center justify-center"><Users className="w-8 h-8 text-white" /></div>
@@ -303,12 +320,12 @@ export function TeamRegistrationForm({
             </div>
             <div className="flex items-center justify-center mb-8">
                 <div className="flex items-center space-x-4">
-                    {[0, 1, 2].map((step) => (
+                    {Array.from({ length: maxTeamSize }).map((_, step) => (
                     <div key={step} className="flex items-center">
                         <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium transition-colors ${step <= currentStep ? "bg-blue-600 text-white" : "bg-slate-700 text-slate-400"}`}>
                             {step < currentStep ? <CheckCircle className="w-5 h-5" /> : step + 1}
                         </div>
-                        {step < 2 && (<div className={`w-16 h-1 mx-2 transition-colors ${step < currentStep ? "bg-blue-600" : "bg-slate-700"}`} />)}
+                        {step < lastStepIndex && (<div className={`w-16 h-1 mx-2 transition-colors ${step < currentStep ? "bg-blue-600" : "bg-slate-700"}`} />)}
                     </div>
                     ))}
                 </div>
@@ -344,7 +361,7 @@ export function TeamRegistrationForm({
             <Card className="mt-6 bg-slate-900/50 border-slate-700">
                 <CardHeader>
                     <CardTitle className="text-white flex items-center gap-2">
-                        <Badge className="bg-blue-500/20 text-blue-300 border-blue-500/30">Step {currentStep + 1} of 3</Badge>
+                        <Badge className="bg-blue-500/20 text-blue-300 border-blue-500/30">Step {currentStep + 1} of {maxTeamSize}</Badge>
                         {memberTitles[currentStep]}
                     </CardTitle>
                     <CardDescription>Lengkapi data {memberTitles[currentStep].toLowerCase()} dengan benar</CardDescription>
@@ -355,7 +372,7 @@ export function TeamRegistrationForm({
                         <Button variant="ghost" onClick={() => (window.location.href = "/dashboard")} className="text-slate-400 hover:bg-slate-800 hover:text-slate-200">Kembali ke Dashboard</Button>
                         <Button variant="outline" onClick={handlePrevious} disabled={currentStep === 0} className="border-slate-600 text-slate-300 hover:bg-slate-800 bg-transparent"><ArrowLeft className="w-4 h-4 mr-2" />Sebelumnya</Button>
                         <Button onClick={handleNext} disabled={isSubmitting} className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white">
-                            {isSubmitting ? "Menyimpan..." : currentStep === 2 ? (<>Selesai & Lanjut Pembayaran<CreditCard className="text-white w-4 h-4 ml-2" /></>) : (<>Selanjutnya<ArrowRight className="text-white w-4 h-4 ml-2" /></>)}
+                            {isSubmitting ? "Menyimpan..." : currentStep === lastStepIndex ? (<>Selesai & Lanjut Pembayaran<CreditCard className="text-white w-4 h-4 ml-2" /></>) : (<>Selanjutnya<ArrowRight className="text-white w-4 h-4 ml-2" /></>)}
                         </Button>
                     </div>
                 </CardContent>

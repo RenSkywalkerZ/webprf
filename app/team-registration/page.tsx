@@ -1,4 +1,4 @@
-// File: app/team-registration/page.tsx (Versi Baru)
+// Salin dan ganti seluruh isi file: app/team-registration/page.tsx
 
 "use client"
 import { useEffect, useState } from "react"
@@ -6,17 +6,18 @@ import { useSearchParams } from "next/navigation"
 import { TeamRegistrationForm } from "@/components/team-registration/team-registration-form"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { AlertCircle } from "lucide-react"
-import Loading from "./loading" // Impor komponen loading
+import Loading from "./loading"
 
 interface Competition {
   id: string
   title: string
+  max_team_size: number // Ini akan mengambil nilai dari database Anda
 }
 
 export default function TeamRegistrationPage() {
   const searchParams = useSearchParams()
   const [competition, setCompetition] = useState<Competition | null>(null)
-  const [availableLevels, setAvailableLevels] = useState<string[]>([]) // <-- State baru
+  const [availableLevels, setAvailableLevels] = useState<string[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -33,20 +34,23 @@ export default function TeamRegistrationPage() {
 
     const fetchInitialData = async () => {
       try {
-        // Jalankan kedua fetch secara bersamaan untuk efisiensi
         const [competitionRes, levelsRes] = await Promise.all([
           fetch(`/api/competitions/${competitionId}`),
-          fetch(`/api/competitions/${competitionId}/levels`) // <-- Panggil API baru
+          fetch(`/api/competitions/${competitionId}/levels`)
         ]);
 
         if (!competitionRes.ok) throw new Error("Kompetisi tidak ditemukan");
         if (!levelsRes.ok) throw new Error("Gagal memuat jenjang pendidikan");
 
-        const { competition } = await competitionRes.json();
+        const competitionData = await competitionRes.json();
         const { levels } = await levelsRes.json();
         
-        setCompetition(competition);
-        setAvailableLevels(levels); // <-- Simpan hasilnya di state
+        if (!competitionData.competition) {
+            throw new Error("Format data kompetisi tidak valid dari API");
+        }
+
+        setCompetition(competitionData.competition);
+        setAvailableLevels(levels);
 
       } catch (err) {
         console.error("Error fetching initial data:", err);
@@ -84,7 +88,9 @@ export default function TeamRegistrationPage() {
       competitionTitle={competition.title}
       registrationId={registrationId}
       batchId={batchId}
-      availableLevels={availableLevels} // <-- Oper data jenjang ke form
+      availableLevels={availableLevels}
+      // Memberikan max_team_size ke form. Default ke 3 jika properti tidak ada.
+      maxTeamSize={competition.max_team_size || 3} 
       onComplete={() => {}}
     />
   );

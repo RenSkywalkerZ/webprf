@@ -538,7 +538,7 @@ const handleConfirmRegistration = async () => {
             <div className="mt-3 p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg">
               <p className="text-blue-300 text-sm flex items-center gap-2">
                 <Users className="w-4 h-4" />
-                <strong>Catatan:</strong> Lomba selain Physics Competition adalah lomba tim (3 peserta per tim).
+                <strong>Catatan:</strong> Lomba selain Physics Competition adalah lomba tim (maksimal 3 peserta per tim).
               </p>
             </div>
             {(hasApprovedRegistration() || hasPendingWithPaymentProof()) && (
@@ -707,7 +707,7 @@ const handleConfirmRegistration = async () => {
                         </Badge>
                         {isTeamCompetition ? (
                           <Badge className="text-xs bg-purple-500/20 text-purple-300 border-purple-500/30">
-                            Tim (3 orang)
+                            Tim
                           </Badge>
                         ) : (
                           <Badge className="text-xs bg-blue-500/20 text-blue-300 border-blue-500/30">
@@ -1057,7 +1057,7 @@ const handleConfirmRegistration = async () => {
                 <div className="bg-purple-500/10 border border-purple-500/30 rounded-lg p-3">
                   <p className="text-purple-300 text-sm font-medium mb-2">Yang perlu disiapkan:</p>
                   <ul className="text-slate-300 text-sm space-y-1">
-                    <li>• Data lengkap 3 anggota tim</li>
+                    <li>• Data lengkap maks. 3 anggota tim</li>
                     <li>• Kartu pelajar/identitas semua anggota tim</li>
                     <li>• Foto diri semua anggota tim</li>
                     <li>• Twibbon yang sudah dipasang semua anggota tim</li>
