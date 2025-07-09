@@ -31,28 +31,42 @@ export function LoginForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Prevent double submission
+    if (isLoading) return;
+    
     setIsLoading(true);
     setLoginError(null); // Clear previous errors
 
-    const result = await onLogin(email, password);
-    setIsLoading(false);
-
-    if (!result.success) {
-      setLoginError(
-        result.message || 'An unexpected error occurred.'
-      );
+    try {
+      const result = await onLogin(email, password);
+      
+      if (!result.success) {
+        setLoginError(
+          result.message || 'An unexpected error occurred.'
+        );
+        toast({
+          title: 'Login Failed',
+          description:
+            result.message || 'An unexpected error occurred.',
+          variant: 'destructive',
+        });
+      } else {
+        toast({
+          title: 'Login Successful',
+          description: 'You have successfully logged in.',
+          variant: 'default',
+        });
+      }
+    } catch (error) {
+      setLoginError('An unexpected error occurred.');
       toast({
         title: 'Login Failed',
-        description:
-          result.message || 'An unexpected error occurred.',
+        description: 'An unexpected error occurred.',
         variant: 'destructive',
       });
-    } else {
-      toast({
-        title: 'Login Successful',
-        description: 'You have successfully logged in.',
-        variant: 'default',
-      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -79,6 +93,7 @@ export function LoginForm({
               onChange={(e) => setEmail(e.target.value)}
               className="pl-10 bg-slate-900/50 border-slate-700 text-white placeholder:text-slate-500 focus:border-cyan-500 focus:ring-cyan-500/20"
               placeholder="nama@email.com"
+              disabled={isLoading}
               required
             />
           </div>
@@ -99,12 +114,14 @@ export function LoginForm({
               onChange={(e) => setPassword(e.target.value)}
               className="pl-10 pr-10 bg-slate-900/50 border-slate-700 text-white placeholder:text-slate-500 focus:border-cyan-500 focus:ring-cyan-500/20"
               placeholder="Masukkan password"
+              disabled={isLoading}
               required
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-white transition-colors">
+              disabled={isLoading}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
               {showPassword ? (
                 <EyeOff className="w-5 h-5" />
               ) : (
@@ -121,7 +138,8 @@ export function LoginForm({
           <button
             type="button"
             onClick={onForgotPassword}
-            className="text-cyan-400 hover:text-cyan-300 text-sm font-medium transition-colors">
+            disabled={isLoading}
+            className="text-cyan-400 hover:text-cyan-300 text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
             Lupa password?
           </button>
         </div>
@@ -129,7 +147,7 @@ export function LoginForm({
         <Button
           type="submit"
           disabled={isLoading}
-          className="w-full bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 text-white font-medium py-3 rounded-lg transition-all duration-300 transform hover:scale-105">
+          className="w-full bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 text-white font-medium py-3 rounded-lg transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100">
           {isLoading ? (
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -149,7 +167,8 @@ export function LoginForm({
           Belum punya akun?{' '}
           <button
             onClick={onSwitchToRegister}
-            className="text-cyan-400 hover:text-cyan-300 font-medium transition-colors">
+            disabled={isLoading}
+            className="text-cyan-400 hover:text-cyan-300 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
             Daftar sekarang
           </button>
         </p>

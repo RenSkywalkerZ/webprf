@@ -30,6 +30,8 @@ import {
   Crown,
   ChevronDown,
   ChevronRight,
+  GraduationCap,
+  SquareUser,
 } from "lucide-react"
 
 interface UserData {
@@ -90,6 +92,7 @@ interface Participant {
     phone: string
     school: string
     grade: string
+    education_level: string
     address: Address
     date_of_birth: string
     gender: string
@@ -115,7 +118,29 @@ export function AdminPanel({ userData }: AdminPanelProps) {
   const [isProofModalOpen, setIsProofModalOpen] = useState(false)
   const [currentProofUrl, setCurrentProofUrl] = useState("")
   const [expandedTeams, setExpandedTeams] = useState<Set<string>>(new Set())
+  const [expandedRegistrants, setExpandedRegistrants] = useState<Set<string>>(new Set());
+  const EDUCATION_LEVEL_LABELS: { [key: string]: string } = {
+    tk: "TK/Sederajat",
+    sd: "SD/Sederajat",
+    smp: "SMP/Sederajat",
+    sma: "SMA/Sederajat",
+    universitas: "Universitas/Perguruan Tinggi",
+    umum: "Guru/Wali/Masyarakat Umum",
+  };
+  const GENDER_LABELS: { [key: string]: string } = {
+    "laki-laki": "Laki-laki",
+    "perempuan": "Perempuan",
+  };
 
+  const toggleRegistrantExpansion = (participantId: string) => {
+    const newExpanded = new Set(expandedRegistrants);
+    if (newExpanded.has(participantId)) {
+        newExpanded.delete(participantId);
+    } else {
+        newExpanded.add(participantId);
+    }
+    setExpandedRegistrants(newExpanded);
+};
 
   //  Fungsi bantuan untuk memformat alamat dengan aman
   const formatAddress = (address: any): string => {
@@ -285,114 +310,85 @@ export function AdminPanel({ userData }: AdminPanelProps) {
 
   // FUNGSI EKSPOR CSV YANG TELAH DIPERBAIKI
   const exportToXlsx = (competitionId: string) => {
-  setIsExporting(true);
-  try {
-    const competitionParticipants = getParticipantsByCompetition(competitionId);
-    const competition = competitions.find((c: any) => c.id === competitionId);
+    setIsExporting(true);
+    try {
+        const competitionParticipants = getParticipantsByCompetition(competitionId);
+        const competition = competitions.find((c: any) => c.id === competitionId);
+        let filesExported = 0;
 
-    // Langkah 1: Cek apakah SEMUA peserta dalam ekspor ini adalah tim
-    const areAllTeams =
-      competitionParticipants.length > 0 &&
-      competitionParticipants.every(p => p.is_team_registration);
+        // Langkah 1: Pisahkan peserta menjadi dua grup (tetap sama)
+        const individualParticipants = competitionParticipants.filter(p => !p.is_team_registration);
+        const teamParticipants = competitionParticipants.filter(p => p.is_team_registration);
 
-    // Langkah 2: Buat headers (judul kolom) secara dinamis
-    let headers;
-    if (areAllTeams) {
-      // Jika semua peserta adalah tim, maka HILANGKAN kolom "Tanggal Lahir"
-      headers = [
-        "ID Registrasi", "Nama Tim / Pendaftar", "Jenis Pendaftaran", "Role Tim",
-        "Nama Lengkap Anggota", "Email", "No. Telepon", "Sekolah", "Kelas",
-        "Alamat", "Jenis Kelamin", "Batch", "Tanggal Daftar",
-        "Status", "Kompetisi",
-      ];
-    } else {
-      // Jika ada peserta individu, kolom "Tanggal Lahir" TETAP ADA
-      headers = [
-        "ID Registrasi", "Nama Tim / Pendaftar", "Jenis Pendaftaran", "Role Tim",
-        "Nama Lengkap Anggota", "Email", "No. Telepon", "Sekolah", "Kelas",
-        "Alamat", "Tanggal Lahir", "Jenis Kelamin", "Batch", "Tanggal Daftar",
-        "Status", "Kompetisi",
-      ];
+        // Langkah 2: Proses dan Unduh File untuk Peserta Tim (jika ada)
+        if (teamParticipants.length > 0) {
+            const teamHeaders = [
+                "ID Registrasi", "Kompetisi", "Status", "Batch",
+                "Nama Perwakilan", "Email Perwakilan", "No. Telp Perwakilan",
+                "Role Anggota", "Nama Lengkap Anggota", "Email Anggota", "No. Telepon Anggota",
+                "Sekolah", "Kelas", "Alamat", "Jenis Kelamin"
+            ];
+            const teamDataRows = teamParticipants.flatMap((participant) => 
+                participant.team_members?.map(member => ([
+                    participant.id, participant.competitions?.title, participant.status, participant.batch_number,
+                    participant.users?.full_name, participant.users?.email, participant.users?.phone,
+                    member.role, member.full_name, member.email, member.phone,
+                    member.school, member.grade, formatAddress(member.address), member.gender
+                ])) || []
+            );
+            
+            const teamWorksheet = XLSX.utils.aoa_to_sheet([teamHeaders, ...teamDataRows]);
+            teamWorksheet["!cols"] = teamHeaders.map(h => ({ wch: h.includes("Nama") || h.includes("Alamat") || h.includes("Email") ? 30 : 18 }));
+            const teamWorkbook = XLSX.utils.book_new(); // Buat workbook baru khusus tim
+            XLSX.utils.book_append_sheet(teamWorkbook, teamWorksheet, "Peserta Tim");
+            
+            // Langsung unduh file untuk tim
+            XLSX.writeFile(teamWorkbook, `${competition?.title || "Semua"}_Peserta_Tim_${new Date().toISOString().split("T")[0]}.xlsx`);
+            filesExported++;
+        }
+
+        // Langkah 3: Proses dan Unduh File untuk Peserta Individu (jika ada)
+        if (individualParticipants.length > 0) {
+            const individualHeaders = [
+                "ID Registrasi", "Kompetisi", "Status", "Batch",
+                "Nama Lengkap", "Email", "No. Telepon", "Sekolah", "Kelas", "Jenjang Pendidikan",
+                "Alamat", "Tgl Lahir", "Jenis Kelamin"
+            ];
+            const individualDataRows = individualParticipants.map((participant) => {
+                const user = participant.users;
+                const educationLabel = user?.education_level ? EDUCATION_LEVEL_LABELS[user.education_level] : "N/A";
+                return [
+                    participant.id, participant.competitions?.title, participant.status, participant.batch_number,
+                    user?.full_name, user?.email, user?.phone, user?.school,
+                    user?.grade, educationLabel, formatAddress(user?.address),
+                    user?.date_of_birth ? new Date(user.date_of_birth).toLocaleDateString("id-ID") : "",
+                    user?.gender
+                ];
+            });
+
+            const individualWorksheet = XLSX.utils.aoa_to_sheet([individualHeaders, ...individualDataRows]);
+            individualWorksheet["!cols"] = individualHeaders.map(h => ({ wch: h.includes("Nama") || h.includes("Alamat") || h.includes("Email") ? 30 : 18 }));
+            const individualWorkbook = XLSX.utils.book_new(); // Buat workbook baru khusus individu
+            XLSX.utils.book_append_sheet(individualWorkbook, individualWorksheet, "Peserta Individu");
+
+            // Langsung unduh file untuk individu
+            XLSX.writeFile(individualWorkbook, `${competition?.title || "Semua"}_Peserta_Individu_${new Date().toISOString().split("T")[0]}.xlsx`);
+            filesExported++;
+        }
+
+        // Langkah 4: Beri notifikasi ke pengguna berdasarkan apa yang diekspor
+        if (filesExported > 0) {
+            toast({ title: `Berhasil mengekspor ${filesExported} file.` });
+        } else {
+            toast({ title: "Tidak ada data untuk diekspor", variant: "destructive" });
+        }
+
+    } catch (error) {
+        console.error("Export error:", error);
+        toast({ title: "Gagal mengekspor data", variant: "destructive" });
+    } finally {
+        setIsExporting(false);
     }
-
-    // Langkah 3: Siapkan baris data sesuai dengan headers yang telah ditentukan
-    const dataRows = competitionParticipants.flatMap((participant) => {
-      const commonData = {
-        registrationId: participant.id,
-        teamName: participant.users?.full_name || "N/A",
-        batch: participant.batch_number,
-        registrationDate: new Date(participant.registration_date).toLocaleDateString("id-ID"),
-        status: participant.status === "approved" ? "Disetujui" : participant.status === "pending" ? "Menunggu" : "Ditolak",
-        competition: participant.competitions?.title || "N/A",
-      };
-
-      if (participant.is_team_registration && participant.team_members && participant.team_members.length > 0) {
-        return participant.team_members.map(member => {
-          if (areAllTeams) {
-            // Jika semua peserta adalah tim, baris data dibuat TANPA kolom tanggal lahir
-            return [
-              commonData.registrationId, commonData.teamName, "Tim", member.role || "Anggota",
-              member.full_name || "", member.email || "", member.phone || "", member.school || "",
-              member.grade || "", formatAddress(member.address),
-              member.gender || "", commonData.batch, commonData.registrationDate,
-              commonData.status, commonData.competition,
-            ];
-          } else {
-            // Jika ada campuran (individu + tim), baris tim perlu placeholder kosong
-            // agar sejajar dengan header yang memiliki kolom 'Tanggal Lahir'
-            return [
-              commonData.registrationId, commonData.teamName, "Tim", member.role || "Anggota",
-              member.full_name || "", member.email || "", member.phone || "", member.school || "",
-              member.grade || "", formatAddress(member.address),
-              "", // Placeholder kosong untuk 'Tanggal Lahir'
-              member.gender || "", commonData.batch, commonData.registrationDate,
-              commonData.status, commonData.competition,
-            ];
-          }
-        });
-      } else {
-        // Untuk peserta individu, data 'Tanggal Lahir' selalu disertakan
-        const user = participant.users;
-        return [[
-          commonData.registrationId, commonData.teamName, "Individu", "Individu",
-          user?.full_name || "", user?.email || "", user?.phone || "", user?.school || "",
-          user?.grade || "", formatAddress(user?.address),
-          user?.date_of_birth ? new Date(user.date_of_birth).toLocaleDateString("id-ID") : "",
-          user?.gender || "", commonData.batch, commonData.registrationDate,
-          commonData.status, commonData.competition,
-        ]];
-      }
-    });
-
-    // Langkah 4: Buat & Unduh File Excel (tidak ada perubahan di sini)
-    const finalData = [headers, ...dataRows];
-    const worksheet = XLSX.utils.aoa_to_sheet(finalData);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Data Peserta");
-    
-    const columnWidths = headers.map((header) => ({
-      wch: header.toLowerCase().includes('nama') || header.toLowerCase().includes('alamat') ? 30 : 15,
-    }));
-    worksheet["!cols"] = columnWidths;
-
-    const fileName = `${competition?.title || "Kompetisi"}_Peserta_${new Date().toISOString().split("T")[0]}.xlsx`;
-    XLSX.writeFile(workbook, fileName);
-
-    toast({
-      title: `Data peserta ${competition?.title} berhasil diekspor!`,
-      variant: "default",
-    });
-
-  } catch (error) {
-    console.error("Export error:", error);
-    toast({
-      title: "Gagal mengekspor data",
-      description: "Terjadi kesalahan saat membuat file Excel.",
-      variant: "destructive",
-    });
-  } finally {
-    setIsExporting(false);
-  }
 };
 
   const getParticipantsByCompetition = (competitionId: string): Participant[] => {
@@ -470,8 +466,8 @@ export function AdminPanel({ userData }: AdminPanelProps) {
             <span>{member.school || "Tidak ada"}</span>
           </div>
           <div className="flex items-center gap-2 text-slate-300">
-            <User className="w-4 h-4 text-slate-400" />
-            <span>Kelas {member.grade || "Tidak ada"}</span>
+            <GraduationCap className="w-4 h-4 text-slate-400" />
+            <span>{member.grade || "N/A"}</span>
           </div>
           <div className="flex items-center gap-2 text-slate-300">
             <MapPin className="w-4 h-4 text-slate-400" />
@@ -795,7 +791,13 @@ export function AdminPanel({ userData }: AdminPanelProps) {
                                       </div>
                                       <div className="flex items-center gap-2 text-slate-300">
                                         <User className="w-4 h-4 text-slate-400" />
-                                        <span>Jenjang/Kelas: {participant.users?.grade || "Tidak ada"}</span>
+                                        <span>Kelas: {participant.users?.grade || "Tidak ada"}</span>
+                                      </div>
+                                      <div className="flex items-center gap-2 text-slate-300">
+                                        <GraduationCap className="w-4 h-4 text-slate-400" />
+                                          <span>
+                                            Jenjang: {EDUCATION_LEVEL_LABELS[participant.users?.education_level] || "N/A"}
+                                          </span>
                                       </div>
                                       <div className="flex items-center gap-2 text-slate-300">
                                         <MapPin className="w-4 h-4 text-slate-400" />
@@ -808,66 +810,69 @@ export function AdminPanel({ userData }: AdminPanelProps) {
                                       <div className="flex items-center gap-2 text-slate-300">
                                         <Calendar className="w-4 h-4 text-slate-400" />
                                         <span>
-                                          Batch {participant.batch_number} •{" "}
+                                          Batch {participant.batch_number} • {" "}
                                           {new Date(participant.registration_date).toLocaleDateString("id-ID")}
                                         </span>
                                       </div>
                                     </div>
                                   )}
 
-                                  {/* Team Registration Info */}
-                                  {participant.is_team_registration && (
-                                    <div>
-                                      <div className="flex items-center gap-2 text-slate-300 mb-3">
-                                        <Calendar className="w-4 h-4 text-slate-400" />
-                                        <span>
-                                          Batch {participant.batch_number} •{" "}
-                                          {new Date(participant.registration_date).toLocaleDateString("id-ID")} •{" "}
-                                          {participant.team_members?.length || 0} anggota tim
-                                        </span>
-                                      </div>
+                                {participant.is_team_registration && (
+                                    <div className="mt-4">
+                                        <div className="flex items-center gap-2 mb-3">
+                                            {/* Tombol untuk melihat/menyembunyikan data PERWAKILAN */}
+                                            <Button variant="outline" size="sm" onClick={() => toggleRegistrantExpansion(participant.id)} className="border-slate-600 text-white hover:bg-slate-700">
+                                                {expandedRegistrants.has(participant.id) ? <ChevronDown className="w-4 h-4 mr-2" /> : <ChevronRight className="w-4 h-4 mr-2" />}
+                                                Lihat Data Perwakilan
+                                            </Button>
 
-                                      <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => toggleTeamExpansion(participant.id)}
-                                        className="mb-3 border-slate-600 text-white hover:bg-slate-700"
-                                      >
-                                        {isTeamExpanded ? (
-                                          <>
-                                            <ChevronDown className="w-4 h-4 mr-2" />
-                                            Sembunyikan Anggota Tim
-                                          </>
-                                        ) : (
-                                          <>
-                                            <ChevronRight className="w-4 h-4 mr-2" />
-                                            Lihat Anggota Tim ({participant.team_members?.length || 0})
-                                          </>
-                                        )}
-                                      </Button>
-
-                                      {isTeamExpanded && participant.team_members && (
-                                        <div className="space-y-3 mt-3">
-                                          {participant.team_members
-                                            .sort((a, b) => {
-                                              const order = { leader: 0, member1: 1, member2: 2 }
-                                              return (
-                                                (order[a.role as keyof typeof order] || 3) -
-                                                (order[b.role as keyof typeof order] || 3)
-                                              )
-                                            })
-                                            .map((member) => renderTeamMember(member))}
+                                            {/* Tombol untuk melihat/menyembunyikan data ANGGOTA TIM */}
+                                            <Button variant="outline" size="sm" onClick={() => toggleTeamExpansion(participant.id)} className="border-slate-600 text-white hover:bg-slate-700">
+                                                {isTeamExpanded ? <ChevronDown className="w-4 h-4 mr-2" /> : <ChevronRight className="w-4 h-4 mr-2" />}
+                                                Lihat Anggota Tim ({participant.team_members?.length || 0})
+                                            </Button>
                                         </div>
-                                      )}
+
+                                        {/* Tampilkan detail PERWAKILAN jika di-expand */}
+                                        {expandedRegistrants.has(participant.id) && (
+                                            <div className="bg-slate-800/30 rounded-lg p-4 border border-slate-700 mb-3 space-y-2 text-sm">
+                                                <h4 className="text-white font-semibold mb-2">Detail Akun Perwakilan/Pendaftar:</h4>
+                                                <div className="flex items-center gap-2 text-slate-300">
+                                                    <User className="w-4 h-4 text-slate-400" />
+                                                    <span>{participant.users?.full_name}</span>
+                                                </div>
+                                                <div className="flex items-center gap-2 text-slate-300">
+                                                    <SquareUser className="w-4 h-4 text-slate-400" />
+                                                    <span>{[GENDER_LABELS[participant.users?.gender]]}</span>
+                                                </div>
+                                                <div className="flex items-center gap-2 text-slate-300">
+                                                    <Mail className="w-4 h-4 text-slate-400" />
+                                                    <span>{participant.users?.email}</span>
+                                                </div>
+                                                <div className="flex items-center gap-2 text-slate-300">
+                                                    <Phone className="w-4 h-4 text-slate-400" />
+                                                    <span>{participant.users?.phone || "Tidak ada"}</span>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* Tampilkan detail ANGGOTA TIM jika di-expand */}
+                                        {isTeamExpanded && participant.team_members && (
+                                            <div className="space-y-3 mt-3">
+                                                {participant.team_members
+                                                    .sort(/* ...logika sort Anda... */)
+                                                    .map((member) => renderTeamMember(member))}
+                                            </div>
+                                        )}
                                     </div>
-                                  )}
+                                )}
 
                                   {participant.users?.date_of_birth && !participant.is_team_registration && (
                                     <div className="mt-2 text-sm text-slate-400">
                                       <span>
                                         Tgl Lahir: {new Date(participant.users.date_of_birth).toLocaleDateString("id-ID")} •{" "}
                                       </span>
-                                      <span>Jenis Kelamin: {participant.users?.gender || "Tidak ada"}</span>
+                                      <span>Jenis Kelamin: {GENDER_LABELS[participant.users?.gender] || "Tidak ada"}</span>
                                     </div>
                                   )}
                                 </div>

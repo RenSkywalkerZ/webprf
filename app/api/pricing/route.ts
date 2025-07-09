@@ -16,13 +16,22 @@ export async function GET() {
       return NextResponse.json({ error: "Failed to fetch pricing" }, { status: 500 });
     }
 
-    // Transform data to the nested object format
+    // Transform data to the new 3-level nested object format
     const pricing: any = {};
     pricingData?.forEach((item) => {
-      if (!pricing[item.batch_id]) {
-        pricing[item.batch_id] = {};
+      const { batch_id, competition_id, education_level, price } = item;
+
+      // Buat lapis batch jika belum ada
+      if (!pricing[batch_id]) {
+        pricing[batch_id] = {};
       }
-      pricing[item.batch_id][item.competition_id] = item.price;
+      // Buat lapis kompetisi jika belum ada
+      if (!pricing[batch_id][competition_id]) {
+        pricing[batch_id][competition_id] = {};
+      }
+      
+      // Set harga pada lapis education_level
+      pricing[batch_id][competition_id][education_level] = price;
     });
 
     return NextResponse.json({ pricing });

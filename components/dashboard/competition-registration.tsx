@@ -3,8 +3,11 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Trophy, CheckCircle, BookOpen, Clock, Info, CreditCard, AlertCircle, AlertTriangle, Users, Phone, Bot, Rocket, FlaskConical, NotebookPen, CircuitBoard, Microscope, ImageIcon, Calculator } from "lucide-react"
+import { Trophy, CheckCircle, BookOpen, Clock, Info, CreditCard, AlertCircle, AlertTriangle, Users, Phone, Bot, Rocket, FlaskConical, NotebookPen, CircuitBoard, Microscope, ImageIcon, Calculator, Loader2 } from "lucide-react"
 import { CountdownTimer } from "@/components/ui/countdown-timer"
+import { ConfirmationDialog } from "@/components/ui/confirmation-dialog"
+import { useToast } from "@/hooks/use-toast"
+import { useRouter } from "next/navigation"
 
 interface Competition {
   id: string
@@ -13,7 +16,7 @@ interface Competition {
   category: string
   color?: string
   icon: string
-  is_team_competition?: boolean
+  is_team_competition?: boolean 
 }
 
 interface Batch {
@@ -40,11 +43,12 @@ interface CompetitionRegistrationProps {
 }
 
 export function CompetitionRegistration({ userData, onRegisterCompetition }: CompetitionRegistrationProps) {
+  const router = useRouter()
   const [competitions, setCompetitions] = useState<Competition[]>([])
   const [batches, setBatches] = useState<Batch[]>([])
   const [currentBatchId, setCurrentBatchId] = useState<number | null>(null)
   const [registrations, setRegistrations] = useState<Registration[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(false)
   const [registrationClosed, setRegistrationClosed] = useState(false)
   const [competitionPrices, setCompetitionPrices] = useState<Record<string, string>>({})
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -60,6 +64,72 @@ export function CompetitionRegistration({ userData, onRegisterCompetition }: Com
     imageIcon: <ImageIcon className="w-6 h-6 text-white" />,
     calculator: <Calculator className="w-6 h-6 text-white" />,
   };
+  const EDUCATION_LEVEL_MAP: { [key: string]: string } = {
+  tk: "TK",
+  sd: "SD/Sederajat",
+  smp: "SMP/Sederajat",
+  sma: "SMA/Sederajat",
+  universitas: "Universitas/Perguruan Tinggi",
+  umum: "Umum",
+  };
+  
+  // 1. Fungsi untuk MEMBUKA modal konfirmasi
+const openCancelDialog = (registrationId: string) => {
+    setCancelDialog({ isOpen: true, registrationId: registrationId });
+};
+const { toast } = useToast();
+// 2. Fungsi untuk MENJALANKAN pembatalan setelah dikonfirmasi di modal
+const handleConfirmCancelation = async () => {
+    const { registrationId } = cancelDialog;
+    if (!registrationId) return;
+
+    // Set loading state ke true
+    setIsLoading(true);
+
+    try {
+        const response = await fetch(`/api/registrations/${registrationId}`, {
+            method: 'DELETE',
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            setRegistrations(prev => prev.filter(r => r.id !== registrationId));
+            // Gunakan toast untuk notifikasi sukses
+            toast({
+                title: "Pendaftaran Dibatalkan",
+                description: "Pendaftaran Anda untuk kompetisi ini telah berhasil dibatalkan.",
+            });
+            setTimeout(() => {
+              window.location.reload();
+            }, 100);
+        } else {
+            // Gunakan toast untuk notifikasi gagal
+            toast({
+                title: "Gagal Membatalkan",
+                description: data.error || "Terjadi kesalahan.",
+                variant: "destructive",
+            });
+        }
+    } catch (error) {
+        // Gunakan toast untuk notifikasi error sistem
+        toast({
+            title: "Error",
+            description: "Tidak dapat terhubung ke server. Silakan coba lagi.",
+            variant: "destructive",
+        });
+        console.error("Cancelation error:", error);
+    } finally {
+        // Set loading state ke false dan tutup modal
+        setIsLoading(false);
+        setCancelDialog({ isOpen: false, registrationId: null });
+    }
+};
+  
+  const [cancelDialog, setCancelDialog] = useState({
+  isOpen: false,
+  registrationId: null as string | null,
+  });
 
   // Define which competitions are team-based using the correct UUIDs
   const teamCompetitionUUIDs = [
@@ -71,6 +141,28 @@ export function CompetitionRegistration({ userData, onRegisterCompetition }: Com
     "7b8cd68d-74be-4113-b36e-6953634ed53c", // Lomba Robotik
     "9517aa1c-3d72-4b6d-a30c-0ca4eed9a5b0", // Cerdas Cermat
   ]
+  // Taruh ini di bagian atas komponen Anda
+const COMPETITION_STARTING_PRICES: { [key: string]: number } = {
+  // UUID: Harga Awal (dari Batch 1)
+  "b4415647-d77b-40af-81ac-956a49498ff2": 100000,   // Physics Competition
+  "22270c4a-4f38-40fb-854e-daa58336f0d9": 280000,   // Lomba Roket Air
+  "331aeb0c-8851-4638-aa34-6502952f098b": 90000,   // Depict Physics
+  "3d4e5cca-cf3d-45d7-8849-2a614b82f4d4": 120000,   // Scientific Writing
+  "43ec1f50-2102-4a4b-995b-e33e61505b22": 250000,   // Science Project
+  "4cbe04f2-222b-4d44-8dd2-25821a66d467": 200000,   // Lomba Praktikum
+  "9517aa1c-3d72-4b6d-a30c-0ca4eed9a5b0": 150000,   // Cerdas Cermat
+};
+
+const GUIDEBOOK_LINKS: { [key: string]: string } = {
+  "b4415647-d77b-40af-81ac-956a49498ff2": "https://tinyurl.com/PhysicsCompetitionGBPRFXIII",
+  "3d4e5cca-cf3d-45d7-8849-2a614b82f4d4": "https://tinyurl.com/ScientificWritingsGBPRFXIII", 
+  "9517aa1c-3d72-4b6d-a30c-0ca4eed9a5b0": "https://tinyurl.com/CerdasCermatGBPRFXIII",
+  "331aeb0c-8851-4638-aa34-6502952f098b": "https://tinyurl.com/DepictPhysicsGBPRFXIII",
+  "4cbe04f2-222b-4d44-8dd2-25821a66d467": "https://tinyurl.com/PraktikumGBPRFXIII",
+  "22270c4a-4f38-40fb-854e-daa58336f0d9": "https://tinyurl.com/RoketAirPRFXIII",
+  "43ec1f50-2102-4a4b-995b-e33e61505b22": "https://tinyurl.com/ScienceProjectGBPRFXIII",
+  "7b8cd68d-74be-4113-b36e-6953634ed53c": "https://tinyurl.com/RobotikGBPRFXIII"
+};
 
   useEffect(() => {
     fetchData()
@@ -98,7 +190,7 @@ export function CompetitionRegistration({ userData, onRegisterCompetition }: Com
         }))
       })
     })
-  }, [competitions, currentBatchId])
+  }, [competitions])
 
   const fetchRegistrations = async () => {
     try {
@@ -150,75 +242,16 @@ export function CompetitionRegistration({ userData, onRegisterCompetition }: Com
   }
 
   const getCompetitionPrice = async (competitionId: string): Promise<string> => {
-    if (!currentBatchId) {
-      console.log("⚠️ No current batch ID for pricing")
-      return "Rp 0"
-    }
+    // 1. Ambil harga dari objek hardcoded, atau 0 jika tidak ditemukan.
+    const price = COMPETITION_STARTING_PRICES[competitionId] || 0;
 
-    try {
-      // Fetch current pricing from admin settings
-      const pricingResponse = await fetch("/api/pricing")
-      if (pricingResponse.ok) {
-        const { pricing } = await pricingResponse.json()
-        const price = pricing[currentBatchId]?.[competitionId] || 0
-
-        console.log("💰 Price from admin settings:", { competitionId, currentBatchId, price })
-
-        return new Intl.NumberFormat("id-ID", {
-          style: "currency",
-          currency: "IDR",
-          minimumFractionDigits: 0,
-        }).format(price)
-      }
-    } catch (error) {
-      console.error("Error fetching pricing:", error)
-    }
-
-    // Fallback to default pricing if admin pricing not available
-    console.log("💰 Using fallback pricing for:", { competitionId, currentBatchId })
-
-    const batchPricing: Record<number, Record<string, number>> = {
-      1: {
-        "b4415647-d77b-40af-81ac-956a49498ff2": 75000, // Physics Competition
-        "22270c4a-4f38-40fb-854e-daa58336f0d9": 150000, // Lomba Roket Air
-        "331aeb0c-8851-4638-aa34-6502952f098b": 150000, // Depict Physics
-        "3d4e5cca-cf3d-45d7-8849-2a614b82f4d4": 150000, // Scientific Writing
-        "43ec1f50-2102-4a4b-995b-e33e61505b22": 150000, // Science Project
-        "4cbe04f2-222b-4d44-8dd2-25821a66d467": 150000, // Lomba Praktikum
-        "7b8cd68d-74be-4113-b36e-6953634ed53c": 150000, // Lomba Robotik
-        "9517aa1c-3d72-4b6d-a30c-0ca4eed9a5b0": 150000, // Cerdas Cermat
-      },
-      2: {
-        "b4415647-d77b-40af-81ac-956a49498ff2": 85000, // Physics Competition
-        "22270c4a-4f38-40fb-854e-daa58336f0d9": 170000, // Lomba Roket Air
-        "331aeb0c-8851-4638-aa34-6502952f098b": 170000, // Depict Physics
-        "3d4e5cca-cf3d-45d7-8849-2a614b82f4d4": 170000, // Scientific Writing
-        "43ec1f50-2102-4a4b-995b-e33e61505b22": 170000, // Science Project
-        "4cbe04f2-222b-4d44-8dd2-25821a66d467": 170000, // Lomba Praktikum
-        "7b8cd68d-74be-4113-b36e-6953634ed53c": 170000, // Lomba Robotik
-        "9517aa1c-3d72-4b6d-a30c-0ca4eed9a5b0": 170000, // Cerdas Cermat
-      },
-      3: {
-        "b4415647-d77b-40af-81ac-956a49498ff2": 95000, // Physics Competition
-        "22270c4a-4f38-40fb-854e-daa58336f0d9": 190000, // Lomba Roket Air
-        "331aeb0c-8851-4638-aa34-6502952f098b": 190000, // Depict Physics
-        "3d4e5cca-cf3d-45d7-8849-2a614b82f4d4": 190000, // Scientific Writing
-        "43ec1f50-2102-4a4b-995b-e33e61505b22": 190000, // Science Project
-        "4cbe04f2-222b-4d44-8dd2-25821a66d467": 190000, // Lomba Praktikum
-        "7b8cd68d-74be-4113-b36e-6953634ed53c": 190000, // Lomba Robotik
-        "9517aa1c-3d72-4b6d-a30c-0ca4eed9a5b0": 190000, // Cerdas Cermat
-      },
-    }
-
-    const batchPrices = batchPricing[currentBatchId]
-    const price = batchPrices?.[competitionId] || 0
-
+    // 2. Format harga ke dalam mata uang Rupiah.
     return new Intl.NumberFormat("id-ID", {
       style: "currency",
       currency: "IDR",
       minimumFractionDigits: 0,
-    }).format(price)
-  }
+    }).format(price);
+};
 
   const handleRegister = (competitionId: string) => {
   // 1. Simpan ID kompetisi yang dipilih
@@ -228,7 +261,8 @@ export function CompetitionRegistration({ userData, onRegisterCompetition }: Com
 };
 
 const handleCancelRegistration = () => {
-  // Cukup tutup modal dan reset state
+  // Reset loading state dan tutup modal
+  setIsLoading(false);
   setIsModalOpen(false);
   setPendingCompetitionId(null);
 };
@@ -237,24 +271,27 @@ const handleConfirmRegistration = async () => {
   // Pastikan ada kompetisi yang dipilih
   if (!pendingCompetitionId) return;
 
-  // --- Mulai Logika Pendaftaran Asli ---
-  if (registrationClosed) {
-    alert("Pendaftaran sedang ditutup sementara untuk rekapitulasi data.");
-    return;
-  }
-
-  const hasApprovedRegistration = registrations.some((reg) => reg.status === "approved");
-  const hasPendingWithPayment = registrations.some((reg) => reg.status === "pending" && reg.payment_proof_url);
-
-  if (hasApprovedRegistration || hasPendingWithPayment) {
-    alert(
-      "Anda sudah terdaftar di salah satu kompetisi atau sedang dalam proses verifikasi. Setiap peserta hanya dapat mendaftar satu kompetisi.",
-    );
-    handleCancelRegistration(); // Tutup modal setelah alert
-    return;
-  }
+  // Set loading state ke true
+  setIsLoading(true);
 
   try {
+    // --- Mulai Logika Pendaftaran Asli ---
+    if (registrationClosed) {
+      alert("Pendaftaran sedang ditutup sementara untuk rekapitulasi data.");
+      return;
+    }
+
+    const hasApprovedRegistration = registrations.some((reg) => reg.status === "approved");
+    const hasPendingWithPayment = registrations.some((reg) => reg.status === "pending" && reg.payment_proof_url);
+
+    if (hasApprovedRegistration || hasPendingWithPayment) {
+      alert(
+        "Anda sudah terdaftar di salah satu kompetisi atau sedang dalam proses verifikasi. Setiap peserta hanya dapat mendaftar satu kompetisi.",
+      );
+      handleCancelRegistration(); // Tutup modal setelah alert
+      return;
+    }
+
     const isTeamCompetition = teamCompetitionUUIDs.includes(pendingCompetitionId);
 
     const response = await fetch("/api/competitions/register", {
@@ -293,10 +330,10 @@ const handleConfirmRegistration = async () => {
     console.error("Registration error:", error);
     alert("Terjadi kesalahan saat mendaftar");
   } finally {
-    // Tutup modal setelah semua proses selesai
+    // Set loading state ke false dan tutup modal
+    setIsLoading(false);
     handleCancelRegistration();
   }
-  // --- Selesai Logika Pendaftaran Asli ---
 };
 
   const getRegistrationStatus = (competitionId: string) => {
@@ -405,7 +442,7 @@ const handleConfirmRegistration = async () => {
   const getBatchStatusBadge = (batch: Batch, isCurrentBatch: boolean) => {
     // Check if registration is globally closed
     if (registrationClosed) {
-      return <Badge className="bg-red-500/20 text-red-300 border-red-500/30">Ditutup</Badge>
+      return <Badge className="bg-red-500/20 text-red-300 border-red-500/30">Sedang Ditutup Sementara</Badge>
     }
 
     // Check if this is the current active batch (set by admin)
@@ -518,17 +555,6 @@ const handleConfirmRegistration = async () => {
         </CardContent>
       </Card>
 
-      <Card className="bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border-blue-500/30">
-          <CardContent className="p-4"> {/* Mengatur padding menjadi lebih kecil */}
-            <div className="flex items-center gap-3">
-              <Phone className="w-5 h-5 text-blue-400 flex-shrink-0" />
-              <p className="text-slate-300 text-sm">
-                Butuh bantuan atau ada kendala pada sistem pendaftaran? Hubungi/WA: <strong className="text-white">0812 1843 8566 (Haekal)</strong>
-              </p>
-            </div>
-          </CardContent>
-      </Card>
-
       {/* Registration Status Alert */}
       {registrationClosed && (
         <Card className="bg-gradient-to-r from-red-500/10 to-orange-500/10 border-red-500/30">
@@ -540,7 +566,7 @@ const handleConfirmRegistration = async () => {
           </CardHeader>
           <CardContent>
             <p className="text-slate-300">
-              Pendaftaran sedang ditutup untuk rekapitulasi data peserta. Silakan tunggu pengumuman pembukaan batch
+              Pendaftaran sedang ditutup untuk rekapitulasi data peserta / dalam perbaikan. Silakan tunggu pengumuman pembukaan batch
               selanjutnya.
             </p>
           </CardContent>
@@ -548,6 +574,7 @@ const handleConfirmRegistration = async () => {
       )}
 
       {/* Batch Information - Show All Batches */}
+      {!registrationClosed && (
       <Card className="bg-gradient-to-r from-cyan-500/10 to-purple-500/10 border-cyan-500/30">
         <CardHeader>
           <CardTitle className="text-white flex items-center gap-2">
@@ -604,7 +631,9 @@ const handleConfirmRegistration = async () => {
           )}
         </CardContent>
       </Card>
+      )}
 
+      {/* Competition Cards */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <Card
         key="manual-robotik"
@@ -641,7 +670,7 @@ const handleConfirmRegistration = async () => {
             {/* Tombol dengan link manual */}
             <div className="flex items-center justify-between pt-4 border-t border-slate-700">
               {/* Ganti "#" dengan link ke form pendaftaran (misal: Google Form) */}
-              <a href="#" target="_blank" rel="noopener noreferrer">
+              <a href="https://tinyurl.com/RobotikGBPRFXIII" target="_blank" rel="noopener noreferrer">
                 <Button className="bg-purple-600 hover:bg-purple-700 text-white">
                   <BookOpen className="w-4 h-4 mr-2" />
                   Info Pendaftaran
@@ -676,9 +705,13 @@ const handleConfirmRegistration = async () => {
                         <Badge variant="outline" className="text-xs border-slate-600 text-slate-300">
                           {competition.category}
                         </Badge>
-                        {isTeamCompetition && (
+                        {isTeamCompetition ? (
                           <Badge className="text-xs bg-purple-500/20 text-purple-300 border-purple-500/30">
                             Tim (3 orang)
+                          </Badge>
+                        ) : (
+                          <Badge className="text-xs bg-blue-500/20 text-blue-300 border-blue-500/30">
+                            Individu
                           </Badge>
                         )}
                       </div>
@@ -709,7 +742,7 @@ const handleConfirmRegistration = async () => {
                 <div className="bg-slate-800/50 rounded-lg p-3">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-slate-400 text-sm">Harga {currentBatch?.name || "Batch Aktif"}</p>
+                      <p className="text-slate-400 text-sm">Biaya pendaftaran <strong>MULAI</strong> dari:</p>
                       <p className="text-white font-semibold text-lg">{price}</p>
                     </div>
                     <div className="text-right">
@@ -720,16 +753,42 @@ const handleConfirmRegistration = async () => {
                 </div>
 
                 <div className="flex items-center justify-between pt-4 border-t border-slate-700">
+                  {/* Tombol Batal akan muncul di sini jika kondisi terpenuhi */}
+                  {registrationStatus === 'pending' && registration && !registration.payment_proof_url ? (
+                      <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => openCancelDialog(registration.id)}
+                      >
+                          Batal
+                      </Button>
+                  ) : (
                   <div className="flex gap-2">
+                    {GUIDEBOOK_LINKS[competition.id] ? (
+                    <a href={GUIDEBOOK_LINKS[competition.id]} target="_blank" rel="noopener noreferrer">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="border-slate-600 text-slate-300 hover:bg-slate-800 bg-transparent"
+                      >
+                        <BookOpen className="w-4 h-4 mr-2" />
+                        Guidebook
+                      </Button>
+                    </a>
+                  ) : (
                     <Button
                       size="sm"
                       variant="outline"
-                      className="border-slate-600 text-slate-300 hover:bg-slate-800 bg-transparent"
+                      className="border-slate-600 text-slate-300 hover:bg-slate-800 bg-transparent opacity-50 cursor-not-allowed"
+                      disabled
                     >
                       <BookOpen className="w-4 h-4 mr-2" />
                       Guidebook
                     </Button>
+                  )}
                   </div>
+                  )}
+                  {/* Tombol Daftar/Pembayaran */}
                   <Button
                     onClick={() => {
                       if (registrationStatus === "pending" && registration && !registration.payment_proof_url) {
@@ -743,7 +802,7 @@ const handleConfirmRegistration = async () => {
                     disabled={
                       !canRegisterNewCompetition() ||
                       (isRegistered(competition.id) &&
-                        (registrationStatus !== "pending" || (registration && registration.payment_proof_url))) ||
+                        (registrationStatus !== "pending" || !!(registration && registration.payment_proof_url))) ||
                       !currentBatchId ||
                       registrationClosed
                     }
@@ -859,51 +918,190 @@ const handleConfirmRegistration = async () => {
           </CardContent>
         </Card>
       )}
-      {isModalOpen && (
-      <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-        <Card className="bg-slate-900 border-slate-700 w-full max-w-md animate-in fade-in-0 zoom-in-95">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-amber-400">
-              <AlertTriangle className="w-6 h-6" />
-              Konfirmasi Pendaftaran
-            </CardTitle>
-            <CardDescription className="text-slate-400 pt-2">
-              Setiap peserta hanya dapat mendaftar untuk <strong>SATU</strong> kompetisi.
-              Apakah Anda yakin ingin melanjutkan?
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-slate-300 text-sm mb-4 bg-slate-800/50 p-3 rounded-lg">
-              Anda akan mendaftar untuk kompetisi:{" "}
-              <strong className="text-white">
-                {competitions.find(c => c.id === pendingCompetitionId)?.title || ""}
-              </strong>
-            </p>
+      <Card className="bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border-blue-500/30">
+          <CardContent className="p-4"> {/* Mengatur padding menjadi lebih kecil */}
+            <div className="flex items-center gap-3">
+              <Phone className="w-5 h-5 text-blue-400 flex-shrink-0" />
+              <p className="text-slate-300 text-sm">
+                Butuh bantuan atau ada kendala pada sistem pendaftaran? Hubungi/WA: <strong className="text-white">0812 1843 8566 (Haekal)</strong>
+              </p>
+            </div>
           </CardContent>
-          <CardContent>
-            <p className="text-slate-400 text-sm">
-              Setelah menekan <strong className="text-white">Ya, Lanjutkan</strong>, Anda dianjurkan menyelesaikan pendaftaran ini. Pastikan Anda sudah memilih
-              kompetisi yang tepat. Diharap untuk tidak mendaftar lomba lain setelah ini.
-            </p>
-          </CardContent>
-          <CardFooter className="flex justify-end gap-3 bg-slate-900/50 p-4 rounded-b-lg">
-            <Button
-              variant="outline"
-              className="border-slate-600 text-slate-300 hover:bg-slate-800"
-              onClick={handleCancelRegistration}
-            >
-              Batal
-            </Button>
-            <Button
+      </Card>
+      {/* Modal untuk Lomba Individu */}
+      {isModalOpen && pendingCompetitionId && !competitions.find(c => c.id === pendingCompetitionId)?.is_team_competition && (() => {
+        // ▼▼▼ TAMBAHKAN LOGIKA INI ▼▼▼
+        const isEducationLevelEligible = 
+          userData?.education_level && 
+          ['smp', 'sma', 'universitas'].includes(userData.education_level);
+          return(
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+          <Card className="bg-slate-900 border-slate-700 w-full max-w-md animate-in fade-in-0 zoom-in-95">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-amber-400">
+                <AlertTriangle className="w-6 h-6" />
+                Konfirmasi Pendaftaran
+              </CardTitle>
+              <CardDescription className="text-slate-400 pt-2">
+                Setiap peserta hanya dapat mendaftar untuk <strong>SATU</strong> kompetisi.
+                Apakah Anda yakin ingin melanjutkan?
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-slate-300 text-sm mb-4 bg-slate-800/50 p-3 rounded-lg">
+                Anda akan mendaftar untuk kompetisi:{" "}
+                <strong className="text-white">
+                  {competitions.find(c => c.id === pendingCompetitionId)?.title || ""}
+                </strong>
+              </p>
+              <p className="text-slate-300 text-sm mb-4 bg-slate-800/50 p-3 rounded-lg">
+                Jenjang Anda adalah:{" "}
+                <strong className="text-white">
+                  {EDUCATION_LEVEL_MAP[userData?.education_level] || "Data tidak ditemukan, silakan periksa/isi di <strong>Informasi Pribadi</strong> Anda."}
+                </strong>
+              </p>
+            </CardContent>
+            <CardContent>
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-blue-300">
+                  <Users className="w-4 h-4" />
+                  <span className="text-sm">Lomba Individu - Anda mendaftar sendiri</span>
+                </div>
+                <p className="text-slate-400 text-sm">
+                  Setelah menekan <strong className="text-white">Ya, Lanjutkan</strong>, Anda akan diarahkan langsung ke halaman pembayaran.
+                  Pastikan jenjang pendidikan Anda sudah tepat dan sudah memilih kompetisi yang tepat.
+                </p>
+              </div>
+              {/* ▼▼▼ TAMBAHKAN PESAN PERINGATAN INI ▼▼▼ */}
+              {!isEducationLevelEligible && (
+                <div className="mt-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
+                  <p className="text-red-300 text-sm flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4" />
+                    Pendaftaran hanya dibuka untuk jenjang SMP, SMA, dan Universitas.
+                  </p>
+                </div>
+              )}
+            </CardContent>
+            <CardFooter className="flex justify-end gap-3 bg-slate-900/50 p-4 rounded-b-lg">
+              <Button
+                variant="outline"
+                className="border-slate-600 text-slate-300 hover:bg-slate-800"
+                onClick={handleCancelRegistration}
+                disabled={isLoading}  // Tambahkan disabled saat loading
+              >
+                Batal
+              </Button>
+              <Button
               className="bg-blue-600 hover:bg-blue-700 text-white"
               onClick={handleConfirmRegistration}
+              disabled={!isEducationLevelEligible || isLoading}
             >
-              Ya, Lanjutkan
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Memproses...
+                </>
+              ) : (
+                <>
+                  <CreditCard className="w-4 h-4 mr-2" />
+                  Ya, Lanjutkan ke Pembayaran
+                </>
+              )}
             </Button>
-          </CardFooter>
-        </Card>
-      </div>
-    )}
+            </CardFooter>
+          </Card>
+        </div>
+        );
+      })()}
+
+      <ConfirmationDialog
+      isOpen={cancelDialog.isOpen}
+      onClose={() => setCancelDialog({ isOpen: false, registrationId: null })}
+      onConfirm={handleConfirmCancelation}
+      type="warning"
+      title="Konfirmasi Pembatalan"
+      description="Apakah Anda yakin ingin membatalkan pendaftaran untuk kompetisi ini? Tindakan ini tidak dapat diurungkan."
+      confirmText="Ya, Batalkan"
+      cancelText="Tidak"
+      isLoading={isLoading}
+      />
+
+      {/* Modal untuk Lomba Tim */}
+      {isModalOpen && pendingCompetitionId && competitions.find(c => c.id === pendingCompetitionId)?.is_team_competition && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+          <Card className="bg-slate-900 border-slate-700 w-full max-w-md animate-in fade-in-0 zoom-in-95">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-purple-400">
+                <Users className="w-6 h-6" />
+                Konfirmasi Pendaftaran
+              </CardTitle>
+              <CardDescription className="text-slate-400 pt-2">
+                Setiap peserta hanya dapat mendaftar untuk <strong>SATU</strong> kompetisi.
+                Apakah Anda yakin ingin melanjutkan?
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-slate-300 text-sm mb-4 bg-slate-800/50 p-3 rounded-lg">
+                Anda akan mendaftar untuk kompetisi:{" "}
+                <strong className="text-white">
+                  {competitions.find(c => c.id === pendingCompetitionId)?.title || ""}
+                </strong>
+              </p>
+            </CardContent>
+            <CardContent>
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-purple-300">
+                  <Users className="w-4 h-4" />
+                  <span className="text-sm">Lomba Tim - Maksimal 3 anggota per tim</span>
+                </div>
+                <div className="bg-purple-500/10 border border-purple-500/30 rounded-lg p-3">
+                  <p className="text-purple-300 text-sm font-medium mb-2">Yang perlu disiapkan:</p>
+                  <ul className="text-slate-300 text-sm space-y-1">
+                    <li>• Data lengkap 3 anggota tim</li>
+                    <li>• Kartu pelajar/identitas semua anggota tim</li>
+                    <li>• Foto diri semua anggota tim</li>
+                    <li>• Twibbon yang sudah dipasang semua anggota tim</li>
+                  </ul>
+                  <p className="text-slate-400 text-xs mt-2">
+                    Pastikan semua data sudah lengkap sebelum melanjutkan pendaftaran.
+                  </p>
+                </div>
+                <p className="text-slate-400 text-sm">
+                  Setelah menekan <strong className="text-white">Ya, Lanjutkan Daftar Tim</strong>, Anda akan diarahkan ke halaman 
+                  pengisian data tim terlebih dahulu, kemudian ke pembayaran.
+                </p>
+              </div>
+            </CardContent>
+            <CardFooter className="flex justify-end gap-3 bg-slate-900/50 p-4 rounded-b-lg">
+              <Button
+                variant="outline"
+                className="border-slate-600 text-slate-300 hover:bg-slate-800"
+                onClick={handleCancelRegistration}
+                disabled={isLoading}  // Tambahkan disabled saat loading
+              >
+                Batal
+              </Button>
+              <Button
+                className="bg-purple-600 hover:bg-purple-700 text-white"
+                onClick={handleConfirmRegistration}
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Memproses...
+                  </>
+                ) : (
+                  <>
+                    <Users className="w-4 h-4 mr-2" />
+                    Ya, Lanjutkan Daftar Tim
+                  </>
+                )}
+              </Button>
+            </CardFooter>
+          </Card>
+        </div>
+      )}
     </div>
   )
 }

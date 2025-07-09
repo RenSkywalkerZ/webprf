@@ -3,7 +3,7 @@ import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Calendar, Trophy, CheckCircle, Clock, XCircle, Info, MapPin, Users, AlertTriangle } from "lucide-react"
+import { Calendar, Trophy, CheckCircle, Clock, XCircle, AlertTriangle, ImageIcon } from "lucide-react"
 
 interface UserDashboardProps {
   userData: any
@@ -132,7 +132,7 @@ export function UserDashboard({ userData }: UserDashboardProps) {
         </p>
       </div>
 
-            {/* Important Notice */}
+      {/* Important Notice */}
       <Card className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border-amber-500/30">
         <CardHeader>
           <CardTitle className="text-white flex items-center gap-2">
@@ -141,11 +141,44 @@ export function UserDashboard({ userData }: UserDashboardProps) {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-slate-300 text-sm">
-            Setiap peserta hanya dapat mendaftar untuk <strong>SATU kompetisi saja</strong> karena semua kompetisi
-            dilaksanakan pada relatif bertabrakan. Pastikan Anda memilih kompetisi dengan tepat sebelum
-            melakukan pendaftaran
+          {/* Pisahkan paragraf pembuka dari list */}
+          <p className="text-slate-300 text-sm mb-2">
+            <strong>PERHATIAN:</strong> Pastikan Anda membaca dan memahami informasi berikut sebelum mendaftar lomba.
           </p>
+          {/* Tambahkan kelas pl-5 (padding-left) pada <ul> */}
+          <ul className="list-disc list-outside space-y-1 text-sm text-slate-300 pl-5">
+            <li>
+              Setiap peserta individu/peserta tim hanya dapat mendaftar untuk <strong>SATU lomba saja</strong> karena semua lomba dilaksanakan pada relatif bertabrakan.
+            </li>
+            <li>
+              Pastikan untuk memilih lomba dengan tepat sebelum melakukan pendaftaran.
+            </li>
+            <li>
+              Harap mengisi data diri pada bagian <strong>Informasi Diri</strong> jika belum atau ada perubahan, menu <strong>Pendaftaran Lomba</strong> akan terbuka setelah Anda mengisi data diri (100% Lengkap).
+            </li>
+          </ul>
+        </CardContent>
+      </Card>
+
+            {/* Card untuk Twibbon */}
+      <Card className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 border-purple-500/30">
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-600 rounded-lg flex items-center justify-center">
+                <ImageIcon className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h3 className="text-white font-semibold">Yuk, Gunakan Twibbon PRF XIII !</h3>
+                <p className="text-slate-400 text-sm">Tunjukkan dukungan dan partisipasi Travellers!</p>
+              </div>
+            </div>
+            <a href="https://bit.ly/TwibbonPRFXIII" target="_blank" rel="noopener noreferrer">
+              <Button className="bg-purple-600 hover:bg-purple-700 text-white">
+                Buka Link Twibbon
+              </Button>
+            </a>
+          </div>
         </CardContent>
       </Card>
 
@@ -288,12 +321,6 @@ export function UserDashboard({ userData }: UserDashboardProps) {
                 <p className="text-slate-300 text-sm mb-4">
                   Anda belum mendaftar kompetisi apapun. Silakan pilih kompetisi yang ingin Anda ikuti.
                 </p>
-                <Button
-                  className="bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 text-white"
-                  onClick={() => (window.location.hash = "#registration")}
-                >
-                  Daftar Kompetisi Sekarang
-                </Button>
               </div>
             </div>
           )}

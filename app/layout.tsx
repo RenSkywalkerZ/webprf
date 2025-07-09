@@ -8,8 +8,8 @@ import { Toaster } from "@/components/ui/toaster"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "PRF XIII",
-  description: "- Pesta Rakyat Fisika XIII",
+  title: "PRF XIII 2025",
+  description: "Pesta Rakyat Fisika XIII",
   icons: {
     icon: "/images/logo.png",
   }

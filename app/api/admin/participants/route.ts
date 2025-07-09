@@ -32,6 +32,7 @@ export async function GET() {
           phone,
           school,
           grade,
+          education_level,
           address,
           date_of_birth,
           gender

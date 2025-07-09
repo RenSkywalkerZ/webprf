@@ -2,26 +2,34 @@
 import { useState, useEffect } from "react"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { CheckCircle, AlertCircle, AlertTriangle, X } from "lucide-react"
+import { CheckCircle, AlertCircle, AlertTriangle, X, Loader2 } from "lucide-react"
 
 interface ConfirmationDialogProps {
   isOpen: boolean
   onClose: () => void
+  onConfirm?: () => void
   type: "success" | "error" | "warning"
   title: string
   description: string
+  confirmText?: string
+  cancelText?: string
   autoClose?: boolean
   autoCloseDelay?: number
+  isLoading?: boolean
 }
 
 export function ConfirmationDialog({
   isOpen,
   onClose,
+  onConfirm,
+  confirmText,
+  cancelText,
   type,
   title,
   description,
   autoClose = true,
   autoCloseDelay = 5000,
+  isLoading,
 }: ConfirmationDialogProps) {
   const [countdown, setCountdown] = useState(autoCloseDelay / 1000)
 
@@ -64,7 +72,7 @@ export function ConfirmationDialog({
       case "error":
         return "border-red-500/30 bg-red-500/10"
       case "warning":
-        return "border-yellow-500/30 bg-yellow-500/10"
+        return "border-yellow-500/60 bg-yellow-500/30"
       default:
         return "border-green-500/30 bg-green-500/10"
     }
@@ -102,10 +110,34 @@ export function ConfirmationDialog({
           </div>
 
           <div className="flex gap-2">
-            <Button onClick={onClose} className={getButtonClasses()}>
-              <X className="w-4 h-4 mr-2" />
-              Tutup
-            </Button>
+            {onConfirm ? (
+              // Jika ada aksi konfirmasi, tampilkan dua tombol
+              <>
+                <Button variant="outline" onClick={onClose} className="border-slate-600 text-slate-300 hover:bg-slate-800">
+                  {cancelText || "Batal"}
+                </Button>
+                  <Button
+                    onClick={onConfirm}
+                    disabled={isLoading}
+                    className="bg-red-600 hover:bg-red-700 text-white"
+                  >
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Memproses...
+                      </>
+                    ) : (
+                      confirmText
+                    )}
+                  </Button>
+              </>
+            ) : (
+              // Jika tidak, tampilkan tombol tutup seperti biasa
+              <Button onClick={onClose} className={getButtonClasses()}>
+                <X className="w-4 h-4 mr-2" />
+                {cancelText || "Tutup"}
+              </Button>
+            )}
           </div>
         </div>
       </DialogContent>

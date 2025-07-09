@@ -398,7 +398,11 @@ export function EducationFields({ formData, validationErrors, onInputChange, onF
 
       <div className="space-y-2">
         <Label htmlFor="grade">
-          <OptionalLabel>Kelas/Semester</OptionalLabel>
+          {formData.educationLevel && formData.educationLevel !== "umum" ? (
+            <RequiredLabel>Kelas/Semester</RequiredLabel>
+          ) : (
+            <OptionalLabel>Kelas/Semester</OptionalLabel>
+          )}
         </Label>
         <FieldDescription>Kelas atau semester saat ini (jika masih bersekolah/kuliah)</FieldDescription>
         <Input

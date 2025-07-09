@@ -40,6 +40,8 @@ interface Registration {
   status: string
   created_at: string
   batch_number: number
+  is_team_registration: boolean
+  displayCategory: string
 }
 
 interface CompetitionDetailsProps {
@@ -449,12 +451,6 @@ export function CompetitionDetails({ userData }: CompetitionDetailsProps) {
             <p className="text-slate-400 mb-6">
               Anda belum mendaftar kompetisi apapun. Mulai daftarkan diri Anda sekarang!
             </p>
-            <Button
-              className="bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 text-white"
-              onClick={() => (window.location.hash = "#registration")}
-            >
-              Daftar Kompetisi
-            </Button>
           </CardContent>
         </Card>
       ) : (
@@ -537,8 +533,8 @@ export function CompetitionDetails({ userData }: CompetitionDetailsProps) {
                         </h3>
                         <div className="space-y-2 text-sm">
                           <div className="flex justify-between">
-                            <span className="text-slate-400">Kategori:</span>
-                            <span className="text-white">{competition?.category}</span>
+                            <span className="text-slate-400">Kategori Jenjang:</span>
+                            <span className="text-white font-medium">{registration.displayCategory}</span>
                           </div>
                           <div className="flex justify-between">
                             <span className="text-slate-400">ID Pendaftaran:</span>
@@ -603,7 +599,7 @@ export function CompetitionDetails({ userData }: CompetitionDetailsProps) {
                           <span className="text-yellow-300 font-semibold">Menunggu Verifikasi</span>
                         </div>
                         <p className="text-slate-300 text-sm">
-                          Anda belum upload bukti pembayaran / bukti pembayaran Anda sedang diverifikasi oleh admin. Mohon tunggu.
+                          Anda belum upload bukti pembayaran <strong>ATAU</strong> bukti pembayaran Anda sedang diverifikasi oleh admin. Mohon tunggu.
                         </p>
                       </div>
                     )}

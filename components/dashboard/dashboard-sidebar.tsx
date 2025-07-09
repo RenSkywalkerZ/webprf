@@ -59,15 +59,15 @@ export function DashboardSidebar({ activeSection, onSectionChange, userData, pro
     },
     {
       id: "registration",
-      label: "Pendaftaran Kompetisi",
+      label: "Pendaftaran Lomba",
       icon: Trophy,
-      description: "Daftar kompetisi yang tersedia",
+      description: "Daftar Lomba yang tersedia",
     },
     {
       id: "details",
-      label: "Detail Kompetisi",
+      label: "Detail Lomba",
       icon: FileText,
-      description: "Detail kompetisi yang diikuti",
+      description: "Detail lomba yang diikuti",
     },
   ]
 

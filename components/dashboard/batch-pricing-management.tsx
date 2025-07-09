@@ -23,13 +23,26 @@ import {
 } from "lucide-react"
 import { Settings } from "lucide-react" // Import Settings component
 
+interface Competition {
+  id: string;
+  title: string;
+  category: string;
+}
+
 interface BatchPricingManagementProps {
   userData: any
 }
 
+interface Batch {
+  id: number;
+  name: string;
+  start_date: string;
+  end_date: string;
+}
+
 export function BatchPricingManagement({ userData }: BatchPricingManagementProps) {
-  const [batches, setBatches] = useState([])
-  const [competitions, setCompetitions] = useState([])
+  const [batches, setBatches] = useState<Batch[]>([])
+  const [competitions, setCompetitions] = useState<Competition[]>([])
   const [currentBatchId, setCurrentBatchId] = useState<number | null>(null)
   const [registrationClosed, setRegistrationClosed] = useState(false)
   const [pricing, setPricing] = useState<any>({})
@@ -44,6 +57,36 @@ export function BatchPricingManagement({ userData }: BatchPricingManagementProps
     end_date: "",
   })
   const [selectedBatch, setSelectedBatch] = useState<string>("1")
+   const EDUCATION_LEVELS = [
+    { value: "sd", label: "SD/Sederajat" },
+    { value: "smp", label: "SMP/Sederajat" },
+    { value: "sma", label: "SMA/Sederajat" },
+    { value: "universitas", label: "Universitas" },
+    { value: "umum", label: "Umum" },
+  ];
+  const COMPETITION_VALID_LEVELS: { [key: string]: string[] } = {
+  // Physics Competition: hanya 'smp', 'sma', dan 'universitas'
+  'b4415647-d77b-40af-81ac-956a49498ff2': ['smp', 'sma', 'universitas'],
+
+  // Scientific Writing: hanya 'smp', 'sma', 'universitas'
+  '3d4e5cca-cf3d-45d7-8849-2a614b82f4d4': ['smp', 'sma', 'universitas'],
+
+  // Science Project hanya 'smp' dan 'sma'
+  '43ec1f50-2102-4a4b-995b-e33e61505b22': ['smp', 'sma'],
+
+  // Loma Praktikum hanya 'smp' dan 'sma'
+  '4cbe04f2-222b-4d44-8dd2-25821a66d467': ['smp', 'sma'],
+
+  // Lomba Cerdas Cermat hanya 'sd' dan 'smp'
+  '9517aa1c-3d72-4b6d-a30c-0ca4eed9a5b0': ['sd', 'smp'],
+
+  // Lomba Roket Air hanya 'smp'
+  '22270c4a-4f38-40fb-854e-daa58336f0d9': ['smp'],
+
+  // Lomba Depict Physics hanya 'umum'
+  '331aeb0c-8851-4638-aa34-6502952f098b': ['umum'],
+
+  };
 
   useEffect(() => {
     fetchData()
@@ -231,16 +274,19 @@ export function BatchPricingManagement({ userData }: BatchPricingManagementProps
     }
   }
 
-  const handlePriceChange = (batchId: string, competitionId: string, price: string) => {
-    const numericPrice = Number.parseInt(price) || 0
+  const handlePriceChange = (batchId: string, competitionId: string, educationLevel: string, price: string) => {
+    const numericPrice = Number.parseInt(price) || 0;
     setPricing((prev: any) => ({
-      ...prev,
-      [batchId]: {
-        ...prev[batchId],
-        [competitionId]: numericPrice,
-      },
-    }))
-  }
+        ...prev,
+        [batchId]: {
+            ...prev[batchId],
+            [competitionId]: {
+                ...prev[batchId]?.[competitionId],
+                [educationLevel]: numericPrice,
+            },
+        },
+    }));
+  };
 
   const handleSavePricing = async () => {
     setIsSaving(true)
@@ -373,17 +419,28 @@ export function BatchPricingManagement({ userData }: BatchPricingManagementProps
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <h3 className="text-white font-semibold mb-3">Batch Aktif</h3>
+                  <h3 className="text-white font-semibold mb-3">Periode Batch Terpilih</h3>
                   {getCurrentBatch() ? (
                     <div className="bg-slate-800/50 rounded-lg p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-white font-medium">{getCurrentBatch()?.name}</span>
-                        <Badge className="bg-green-500/20 text-green-300 border-green-500/30">Aktif</Badge>
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-white font-medium">{getCurrentBatch()?.name}</span>
+                          {registrationClosed ? (
+                            <Badge className="bg-red-500/20 text-red-300 border-red-500/30">
+                              <Lock className="w-3 h-3 mr-1" />
+                              Ditutup
+                            </Badge>
+                          ) : (
+                            <Badge className="bg-green-500/20 text-green-300 border-green-500/30">
+                              <Unlock className="w-3 h-3 mr-1" />
+                              Dibuka
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-slate-400 text-sm">
+                          {/* Kode ini sekarang aman karena hanya dijalankan jika getCurrentBatch() ada isinya */}
+                          {formatDateTime(getCurrentBatch()!.start_date)} - {formatDateTime(getCurrentBatch()!.end_date)}
+                        </p>
                       </div>
-                      <p className="text-slate-400 text-sm">
-                        {formatDateTime(getCurrentBatch()?.start_date)} - {formatDateTime(getCurrentBatch()?.end_date)}
-                      </p>
-                    </div>
                   ) : (
                     <div className="bg-slate-800/50 rounded-lg p-4 text-center text-slate-400">
                       Tidak ada batch aktif
@@ -673,85 +730,68 @@ export function BatchPricingManagement({ userData }: BatchPricingManagementProps
                           </div>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                          <div>
-                            <Label className="text-white font-medium">Harga Pendaftaran</Label>
-                            <div className="mt-2 space-y-2">
-                              <Input
-                                type="number"
-                                value={currentPrice}
-                                onChange={(e) => handlePriceChange(batch.id.toString(), competition.id, e.target.value)}
-                                className="bg-slate-800/50 border-slate-600 text-white"
-                                placeholder="Masukkan harga..."
-                              />
-                              <div className="text-sm text-slate-400">Format: {formatPrice(currentPrice)}</div>
-                            </div>
+                          <div className="mt-2 space-y-3">
+                            {EDUCATION_LEVELS
+                                .filter(level => {
+                                    // Dapatkan daftar jenjang yang valid untuk kompetisi ini
+                                    const validLevels = COMPETITION_VALID_LEVELS[competition.id];
+                                    // Jika tidak terdefinisi di kamus kita, tampilkan semua. Jika ada, filter.
+                                    return !validLevels || validLevels.includes(level.value);
+                                })
+                                .map(level => {
+                                    const currentPrice = pricing[batch.id]?.[competition.id]?.[level.value] || 0;
+                                    return (
+                                        // ... sisa JSX di dalam map tetap sama ...
+                                        <div key={level.value} className="grid grid-cols-3 items-center gap-2">
+                                            <Label htmlFor={`${batch.id}-${competition.id}-${level.value}`} className="text-sm text-slate-400 col-span-1">
+                                                {level.label}
+                                            </Label>
+                                            <div className="col-span-2">
+                                                <Input
+                                                    id={`${batch.id}-${competition.id}-${level.value}`}
+                                                    type="number"
+                                                    value={currentPrice}
+                                                    placeholder={`Harga untuk ${level.label}`}
+                                                    onChange={(e) => handlePriceChange(batch.id.toString(), competition.id, level.value, e.target.value)}
+                                                    className="bg-slate-800/50 border-slate-600 text-white"
+                                                />
+                                            </div>
+                                        </div>
+                                    )
+                                })}
                           </div>
 
-                          <div className="bg-slate-800/50 rounded-lg p-3">
-                            <div className="flex items-center justify-between text-sm">
-                              <span className="text-slate-300">Status Harga</span>
-                              {currentPrice > 0 ? (
-                                <div className="flex items-center gap-1 text-green-400">
-                                  <CheckCircle className="w-3 h-3" />
-                                  <span>Tersedia</span>
-                                </div>
-                              ) : (
-                                <div className="flex items-center gap-1 text-red-400">
-                                  <AlertCircle className="w-3 h-3" />
-                                  <span>Belum diatur</span>
-                                </div>
-                              )}
-                            </div>
-                          </div>
+                          {/* Blok untuk Status Harga Keseluruhan Kompetisi */}
+                          {(() => {
+                              // Ambil semua harga untuk kompetisi ini (misal: {smp: 100, sma: 120})
+                              const pricesForCompetition = pricing[batch.id]?.[competition.id] || {};
+                              // Cek apakah ada setidaknya satu harga yang lebih dari 0
+                              const isPriceSet = Object.values(pricesForCompetition).some(price => Number(price) > 0);
+
+                              return (
+                                  <div className="bg-slate-800/50 rounded-lg p-3">
+                                      <div className="flex items-center justify-between text-sm">
+                                          <span className="text-slate-300">Status Harga</span>
+                                          {isPriceSet ? (
+                                              <div className="flex items-center gap-1 text-green-400">
+                                                  <CheckCircle className="w-3 h-3" />
+                                                  <span>Tersedia</span>
+                                              </div>
+                                          ) : (
+                                              <div className="flex items-center gap-1 text-red-400">
+                                                  <AlertCircle className="w-3 h-3" />
+                                                  <span>Belum diatur</span>
+                                              </div>
+                                          )}
+                                      </div>
+                                  </div>
+                              );
+                          })()}
                         </CardContent>
                       </Card>
                     )
                   })}
                 </div>
-
-                {/* Batch Summary */}
-                <Card className="bg-slate-900/50 border-slate-700">
-                  <CardHeader>
-                    <CardTitle className="text-white">Ringkasan Harga {batch.name}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      <div className="text-center">
-                        <div className="text-2xl font-bold text-white">
-                          {competitions.filter((c: any) => pricing[batch.id]?.[c.id] > 0).length}
-                        </div>
-                        <div className="text-slate-400 text-sm">Harga Diatur</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-2xl font-bold text-white">
-                          {
-                            competitions.filter(
-                              (c: any) => !pricing[batch.id]?.[c.id] || pricing[batch.id]?.[c.id] === 0,
-                            ).length
-                          }
-                        </div>
-                        <div className="text-slate-400 text-sm">Belum Diatur</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-2xl font-bold text-white">
-                          {formatPrice(
-                            Object.values(pricing[batch.id] || {}).reduce(
-                              (sum: number, price: any) => sum + (price || 0),
-                              0,
-                            ) / competitions.length,
-                          )}
-                        </div>
-                        <div className="text-slate-400 text-sm">Rata-rata</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-2xl font-bold text-white">
-                          {formatPrice(Math.max(...Object.values(pricing[batch.id] || {}).map((p: any) => p || 0)))}
-                        </div>
-                        <div className="text-slate-400 text-sm">Tertinggi</div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
               </TabsContent>
             ))}
           </Tabs>

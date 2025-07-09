@@ -7,15 +7,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog"
 import { ProfileCompletion } from "./personal-info/profile-completion"
 import { BasicInfoFields, AddressFields, EducationFields } from "./personal-info/form-fields"
-import { User, Save, Shield } from "lucide-react"
+import { User, Save, Shield, Lock, AlertTriangle } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 
 interface PersonalInformationProps {
   userData: any
   onUpdateUser: (userData: any) => void
+  registrations: { status: string }[]
+  onDirtyChange: (isDirty: boolean) => void
 }
 
-export function PersonalInformation({ userData, onUpdateUser }: PersonalInformationProps) {
+export function PersonalInformation({ userData, onUpdateUser, registrations = [], onDirtyChange }: PersonalInformationProps) {
   const router = useRouter()
   const { toast } = useToast()
 
@@ -48,6 +50,12 @@ export function PersonalInformation({ userData, onUpdateUser }: PersonalInformat
       identityCard: null as File | null,
     }
   })
+  
+  const [initialFormData, setInitialFormData] = useState(formData);
+   useEffect(() => {
+    const hasChanged = JSON.stringify(formData) !== JSON.stringify(initialFormData);
+    onDirtyChange(hasChanged);
+  }, [formData, initialFormData, onDirtyChange]);
 
   const [isLoading, setIsLoading] = useState(false)
   const [validationErrors, setValidationErrors] = useState<{ [key: string]: string }>({})
@@ -205,6 +213,7 @@ export function PersonalInformation({ userData, onUpdateUser }: PersonalInformat
           title: "Profil Berhasil Diperbarui",
           description: "Semua perubahan telah disimpan dengan sukses.",
         })
+         setInitialFormData(formData);
         router.refresh()
       } else {
         toast({
@@ -227,6 +236,8 @@ export function PersonalInformation({ userData, onUpdateUser }: PersonalInformat
 
   const profileCompletion = calculateProfileCompletion()
   const isAdmin = userData?.role === "admin"
+  const hasActiveRegistration = registrations.some(reg => reg.status === 'pending' || reg.status === 'approved');
+  const isProfileLocked = !isAdmin && hasActiveRegistration;
 
   return (
     <div className="space-y-6">
@@ -243,8 +254,56 @@ export function PersonalInformation({ userData, onUpdateUser }: PersonalInformat
       </div>
 
       <ProfileCompletion completion={profileCompletion} isAdmin={isAdmin} />
+      
+      {isProfileLocked && (
+        <Card className="bg-red-500/10 border-red-500/30">
+          <CardHeader>
+            <CardTitle className="text-white flex items-center gap-2">
+              <Lock className="w-5 h-5 text-red-400" />
+              Profil Dikunci
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-slate-300 mb-2">
+              Profil Anda dikunci karena memiliki pendaftaran aktif.
+            </p>
+            <ul className="list-disc pl-5 space-y-1 text-sm text-slate-400">
+              <li>
+                <strong>Jika status "Disetujui":</strong> Untuk perubahan data, silakan hubungi admin.
+              </li>
+              <li>
+                <strong>Jika "Menunggu Verifikasi" (belum upload bukti bayar & dokumen lainnya):</strong> Anda harus membatalkan pendaftaran terlebih dahulu untuk bisa mengubah data.
+              </li>
+            </ul>
+          </CardContent>
+        </Card>
+      )}
 
-      <Card className="bg-slate-900/50 border-slate-700">
+      <Card className="bg-amber-500/10 border-amber-500/30 mt-4">
+        <CardContent className="p-4">
+          <div className="flex items-start gap-3">
+            <div className="flex-shrink-0 mt-1">
+              <AlertTriangle className="w-5 h-5 text-amber-400" />
+            </div>
+            <div>
+              <h3 className="text-amber-200 font-semibold">Petunjuk Penting Pengisian Data</h3>
+              <ul className="list-disc pl-5 mt-2 space-y-1 text-slate-300 text-sm">
+                <li>
+                  <strong>Untuk Pendaftar Lomba Individu (Physics Competition):</strong>
+                  <p className="text-slate-400">Wajib mengisi semua data pada laman ini dengan lengkap dan benar untuk keperluan verifikasi.</p>
+                </li>
+                <li>
+                  <strong>Untuk Pendaftar Lomba Tim (selain Physics Competition):</strong>
+                  <p className="text-slate-400">Laman ini boleh diisi oleh perwakilan (misal: ketua tim, guru, wali murid). Data lengkap setiap anggota akan diisi pada form pendaftaran tim setelah memilih lomba.</p>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Enhanced Card with Lock Overlay */}
+      <Card className={`bg-slate-900/50 border-slate-700 relative ${isProfileLocked ? 'overflow-hidden' : ''}`}>
         <CardHeader>
           <CardTitle className="text-white flex items-center gap-2">
             <User className="w-5 h-5" />
@@ -255,77 +314,106 @@ export function PersonalInformation({ userData, onUpdateUser }: PersonalInformat
               ? "Sebagai administrator, Anda hanya perlu mengatur informasi dasar akun"
               : " ⚠ Pastikan semua informasi yang Anda masukkan sesuai agar memudahkan proses verifikasi dan komunikasi."}
           </CardDescription>
-          <CardDescription>
-            1. Bagi yang ingin mendaftar lomba individu (Physics Competition) silakan isi dengan sesuai dan benar.
-          </CardDescription>
-          <CardDescription>
-            2. Bagi yang ingin mendaftar lomba tim (selain Physics Competition) silakan isi laman ini seperlunya (Boleh diisi oleh perwakilan tim, seperti guru atau wali murid). Data semua anggota tim akan diisi di laman Pendaftaran Kompetisi
-          </CardDescription>
         </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-6">
-              <h3 className="text-lg font-semibold text-white border-b border-slate-700 pb-2">Data Diri</h3>
-              <BasicInfoFields
-                formData={formData}
-                validationErrors={validationErrors}
-                validationSuccess={{}}
-                onInputChange={handleInputChange}
-                onFileChange={handleFileChange}
-                isAdmin={isAdmin}
-              />
-            </div>
+        
+        <CardContent className={isProfileLocked ? 'relative' : ''}>
+          {/* Form Content */}
+          <div className={isProfileLocked ? 'filter blur-sm pointer-events-none select-none' : ''}>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="space-y-6">
+                <h3 className="text-lg font-semibold text-white border-b border-slate-700 pb-2">Data Diri</h3>
+                <BasicInfoFields
+                  formData={formData}
+                  validationErrors={validationErrors}
+                  validationSuccess={{}}
+                  onInputChange={handleInputChange}
+                  onFileChange={handleFileChange}
+                  isAdmin={isAdmin}
+                />
+              </div>
 
-            {!isAdmin && (
-              <>
-                <div className="space-y-6">
-                  <h3 className="text-lg font-semibold text-white border-b border-slate-700 pb-2">Alamat Lengkap</h3>
-                  <AddressFields
-                    formData={formData}
-                    validationErrors={validationErrors}
-                    validationSuccess={{}}
-                    onInputChange={handleInputChange}
-                    onFileChange={handleFileChange}
-                  />
-                </div>
+              {!isAdmin && (
+                <>
+                  <div className="space-y-6">
+                    <h3 className="text-lg font-semibold text-white border-b border-slate-700 pb-2">Alamat</h3>
+                    <AddressFields
+                      formData={formData}
+                      validationErrors={validationErrors}
+                      validationSuccess={{}}
+                      onInputChange={handleInputChange}
+                      onFileChange={handleFileChange}
+                    />
+                  </div>
 
-                <div className="space-y-6">
-                  <h3 className="text-lg font-semibold text-white border-b border-slate-700 pb-2">
-                    Informasi Instansi Pendidikan
-                  </h3>
-                  <EducationFields
-                    formData={formData}
-                    validationErrors={validationErrors}
-                    validationSuccess={{}}
-                    onInputChange={handleInputChange}
-                    onFileChange={handleFileChange}
-                  />
-                </div>
-              </>
-            )}
-
-            <Button
-              type="submit"
-              disabled={isLoading}
-              className={`${
-                isAdmin
-                  ? "bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700"
-                  : "bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700"
-              } text-white`}
-            >
-              {isLoading ? (
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  Menyimpan...
-                </div>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <Save className="w-4 h-4" />
-                  Simpan Perubahan
-                </div>
+                  <div className="space-y-6">
+                    <h3 className="text-lg font-semibold text-white border-b border-slate-700 pb-2">
+                      Informasi Instansi Pendidikan
+                    </h3>
+                    <EducationFields
+                      formData={formData}
+                      validationErrors={validationErrors}
+                      validationSuccess={{}}
+                      onInputChange={handleInputChange}
+                      onFileChange={handleFileChange}
+                    />
+                  </div>
+                </>
               )}
-            </Button>
-          </form>
+
+              <Button
+                type="submit"
+                disabled={isLoading || isProfileLocked}
+                className={`${
+                  isAdmin
+                    ? "bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700"
+                    : "bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700"
+                } text-white`}
+              >
+                {isLoading ? (
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Menyimpan...
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <Save className="w-4 h-4" />
+                    Simpan Perubahan
+                  </div>
+                )}
+              </Button>
+              
+              {!isProfileLocked && (
+                <p className="text-sm text-slate-400">
+                  Jangan lupa untuk <strong>SIMPAN PERUBAHAN</strong> sebelum keluar dari laman ini!
+                </p>
+              )}
+            </form>
+          </div>
+
+          {/* Lock Overlay */}
+          {isProfileLocked && (
+            <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-10">
+              <div className="text-center space-y-4">
+                <div className="flex justify-center">
+                  <div className="relative">
+                    <Lock className="w-24 h-24 text-red-400 drop-shadow-lg" />
+                    <div className="absolute inset-0 bg-red-400/20 rounded-full blur-xl animate-pulse" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <h3 className="text-xl font-bold text-white">Form Dikunci</h3>
+                  <p className="text-slate-300 max-w-sm mx-auto">
+                    Informasi diri tidak dapat diubah karena sudah terdaftar di kompetisi
+                  </p>
+                  <div className="mt-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
+                    <p className="text-sm text-red-200">
+                      Hubungi admin / batalkan pendaftaran untuk perubahan data
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 

@@ -1,8 +1,26 @@
 import { getServerSession } from "next-auth/next"
 import { authOptions } from "@/auth"
 import { type NextRequest, NextResponse } from "next/server"
-
 import { supabaseAdmin } from "@/lib/supabase"
+
+// Helper map untuk membuat tampilan jenjang lebih baik
+const EDUCATION_LEVEL_MAP: { [key: string]: string } = {
+  sd: "SD/Sederajat",
+  smp: "SMP",
+  sma: "SMA",
+  universitas: "Perguruan Tinggi/Universitas",
+  umum: "Umum",
+};
+
+// Helper untuk mengubah grade (Contoh: "Kelas 10 (SMA)") menjadi jenjang (Contoh: "sma")
+const mapGradeToEducationLevel = (grade: string): string => {
+  const gradeLower = grade.toLowerCase();
+  if (gradeLower.includes("sd")) return "sd";
+  if (gradeLower.includes("smp")) return "smp";
+  if (gradeLower.includes("sma") || gradeLower.includes("smk")) return "sma";
+  if (gradeLower.includes("univ") || gradeLower.includes("mahasiswa")) return "universitas";
+  return "umum";
+};
 
 export async function GET(request: NextRequest) {
   try {
@@ -47,7 +65,8 @@ export async function GET(request: NextRequest) {
         payment_proof_url,
         payment_submitted_at,
         is_team_registration, 
-        team_data_complete
+        team_data_complete,
+        user_id
       `) // <-- TAMBAHKAN DUA FIELD INI
       .eq("user_id", session.user.id)
       .order("created_at", { ascending: false })
@@ -68,11 +87,49 @@ export async function GET(request: NextRequest) {
         return true
       }) || []
 
+          const enrichedRegistrations = await Promise.all(
+      validRegistrations.map(async (reg) => {
+        let displayCategory = "N/A";
+
+        if (reg.is_team_registration) {
+          // Untuk Lomba Tim: Ambil grade ketua tim
+          const { data: leader } = await supabaseAdmin
+            .from("team_members")
+            .select("grade")
+            .eq("registration_id", reg.id)
+            .eq("role", "leader")
+            .single();
+            
+          if (leader?.grade) {
+            const level = mapGradeToEducationLevel(leader.grade);
+            displayCategory = EDUCATION_LEVEL_MAP[level] || leader.grade;
+          }
+        } else {
+          // Untuk Lomba Individu: Ambil education_level pengguna
+          const { data: user } = await supabaseAdmin
+            .from("users")
+            .select("education_level")
+            .eq("id", reg.user_id)
+            .single();
+
+          if (user?.education_level) {
+            displayCategory = EDUCATION_LEVEL_MAP[user.education_level] || user.education_level;
+          }
+        }
+        
+        // Kembalikan data registrasi asli + field baru
+        return { ...reg, displayCategory };
+      })
+    );
+
     return NextResponse.json({
-      registrations: validRegistrations,
+      registrations: enrichedRegistrations,
     })
   } catch (error) {
     console.error("Error fetching registrations:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
+
+
+  
 }
