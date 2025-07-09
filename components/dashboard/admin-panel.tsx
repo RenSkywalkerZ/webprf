@@ -263,53 +263,77 @@ export function AdminPanel({ userData }: AdminPanelProps) {
   }
 
   // FUNGSI YANG DIPERBAIKI
-  const handleBulkStatusChange = async () => {
-    if (selectedParticipants.length === 0 || !bulkStatus) {
+const handleBulkStatusChange = async () => {
+  if (selectedParticipants.length === 0 || !bulkStatus) {
+    toast({
+      title: "Pilih peserta dan status terlebih dahulu",
+      variant: "destructive",
+    });
+    return;
+  }
+
+  // --- LANGKAH 1: PERSIAPAN & BACKUP ---
+  const previousParticipants = [...participants];
+  const participantIds = [...selectedParticipants];
+  const newStatus = bulkStatus;
+
+  // --- LANGKAH 2: OPTIMISTIC UI UPDATE ---
+  setParticipants(prevParticipants =>
+    prevParticipants.map(participant =>
+      participantIds.includes(participant.id)
+        ? { ...participant, status: newStatus }
+        : participant
+    )
+  );
+  setSelectedParticipants([]);
+  setBulkStatus("");
+
+  // --- PENERAPAN LANGKAH 3 DIMULAI DI SINI ---
+
+  // Gunakan try...catch untuk menangani kemungkinan error jaringan atau server.
+  try {
+    // 1. Kirim permintaan ke server di latar belakang.
+    const response = await fetch("/api/admin/participants/status", {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        participantIds: participantIds, // Gunakan variabel yang disimpan dari Langkah 1
+        status: newStatus,             // Gunakan variabel yang disimpan dari Langkah 1
+      }),
+    });
+
+    // 2. Tangani hasil dari API.
+    if (response.ok) {
+      // Jika berhasil, cukup tampilkan notifikasi. UI sudah benar, jadi tidak perlu melakukan apa-apa lagi.
       toast({
-        title: "Pilih peserta dan status terlebih dahulu",
+        title: `Berhasil mengubah status ${participantIds.length} peserta`,
+        variant: "default",
+      });
+    } else {
+      // Jika server mengembalikan error (misal: validasi gagal), tampilkan pesan error.
+      toast({
+        title: "Gagal mengubah status massal",
+        description: "Mengembalikan data ke kondisi semula.",
         variant: "destructive",
       });
-      return;
+      // KEMBALIKAN UI ke kondisi semula menggunakan backup dari Langkah 1.
+      setParticipants(previousParticipants);
     }
-  
-    try {
-      const response = await fetch("/api/admin/participants/status", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          participantIds: selectedParticipants,
-          status: bulkStatus,
-        }),
-      });
-  
-      if (response.ok) {
-        toast({
-          title: `Berhasil mengubah status ${selectedParticipants.length} peserta`,
-          variant: "default",
-        });
-  
-        // Ambil ulang data dari server untuk memastikan UI sinkron
-        await fetchData();
-  
-        // Reset state setelah data dimuat ulang
-        setSelectedParticipants([]);
-        setBulkStatus("");
-      } else {
-        toast({
-          title: "Gagal mengubah status massal",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      console.error("Error updating bulk status:", error);
-      toast({
-        title: "Terjadi kesalahan saat mengubah status",
-        variant: "destructive",
-      });
-    }
-  };
+  } catch (error) {
+    // Jika terjadi error (misal: tidak ada koneksi internet), tampilkan pesan.
+    console.error("Error updating bulk status:", error);
+    toast({
+      title: "Terjadi kesalahan saat mengubah status",
+      description: "Periksa koneksi Anda dan coba lagi.",
+      variant: "destructive",
+    });
+    // KEMBALIKAN UI ke kondisi semula menggunakan backup dari Langkah 1.
+    setParticipants(previousParticipants);
+  }
+  // --- PENERAPAN LANGKAH 3 SELESAI ---
+};
 
   // FUNGSI EKSPOR CSV YANG TELAH DIPERBAIKI
   const exportToXlsx = (competitionId: string) => {
