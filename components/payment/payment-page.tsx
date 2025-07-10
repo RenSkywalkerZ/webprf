@@ -102,8 +102,8 @@ export function PaymentPage({ registrationId }: PaymentPageProps) {
         toast({ title: "Format File Tidak Valid", description: "Hanya file gambar (JPG, JPEG, PNG) dan PDF yang diperbolehkan.", variant: "destructive" })
         return
       }
-      if (file.size > 10 * 1024 * 1024) {
-        toast({ title: "File Terlalu Besar", description: "Ukuran file maksimal 10MB.", variant: "destructive" })
+      if (file.size > 5 * 1024 * 1024) {
+        toast({ title: "File Terlalu Besar", description: "Ukuran file maksimal 5MB.", variant: "destructive" })
         return
       }
       setPaymentProof(file)
@@ -414,7 +414,7 @@ export function PaymentPage({ registrationId }: PaymentPageProps) {
                     onChange={handleFileChange}
                     className="bg-slate-800 border-slate-700 text-white file:bg-slate-700 file:text-white file:border-0 file:mr-4 file:py-2 file:px-4 file:rounded-md"
                   />
-                  <p className="text-slate-400 text-sm mt-1">Format: JPG, JPEG, PNG, dan PDF Maksimal 10MB (Kompres bila terlalu besar: <a href="https://tinyjpg.com/" className="text-blue-400 underline" target="_blank" rel="noopener noreferrer">tinyjpg.com</a>, <a href="https://ilovepdf.com/" className="text-blue-400 underline" target="_blank" rel="noopener noreferrer">ilovepdf.com</a>. Terima kasih atas pengertiannya.)</p>
+                  <p className="text-slate-400 text-sm mt-1">Format: JPG, JPEG, PNG, dan PDF Maksimal 5MB (Kompres bila terlalu besar: <a href="https://tinyjpg.com/" className="text-blue-400 underline" target="_blank" rel="noopener noreferrer">tinyjpg.com</a>, <a href="https://ilovepdf.com/" className="text-blue-400 underline" target="_blank" rel="noopener noreferrer">ilovepdf.com</a>. Terima kasih atas pengertiannya.)</p>
                 </div>
 
                 <div>

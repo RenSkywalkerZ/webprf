@@ -23,12 +23,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate file
-    if (paymentProof.size > 10 * 1024 * 1024) {
-      return NextResponse.json({ error: "File size must be less than 10MB" }, { status: 400 })
+    if (paymentProof.size > 5 * 1024 * 1024) {
+      return NextResponse.json({ error: "File size must be less than 5MB" }, { status: 400 })
     }
 
     if (!["image/jpeg", "image/png", "image/jpg", "application/pdf"].includes(paymentProof.type)) {
-      return NextResponse.json({ error: "File must be JPG, PNG, or PDF" }, { status: 400 })
+      return NextResponse.json({ error: "File must be JPG, JPEG, PNG, or PDF" }, { status: 400 })
     }
 
     // Verify the registration belongs to the user and is still valid
