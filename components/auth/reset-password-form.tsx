@@ -1,8 +1,10 @@
+// FOR ANALYSIS/components/auth/reset-password-form.tsx
+
 'use client';
 
 import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast'; // Pastikan menggunakan hook yang benar
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -17,8 +19,7 @@ export function ResetPasswordForm() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] =
-    useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -29,46 +30,39 @@ export function ResetPasswordForm() {
     setError(null);
 
     if (!token) {
-      setError('Invalid or missing reset token.');
+      setError('Token reset tidak valid atau tidak ditemukan.');
       setIsLoading(false);
       return;
     }
 
     if (password !== confirmPassword) {
-      setError('Passwords do not match.');
+      setError('Password dan konfirmasi password tidak cocok.');
       setIsLoading(false);
       return;
     }
 
-    // Enforce strong password policy
     if (password.length < 8) {
-      setError('Password must be at least 8 characters long.');
+      setError('Password minimal harus 8 karakter.');
       setIsLoading(false);
       return;
     }
     if (!/[A-Z]/.test(password)) {
-      setError(
-        'Password must contain at least one uppercase letter.'
-      );
+      setError('Password harus mengandung setidaknya satu huruf kapital.');
       setIsLoading(false);
       return;
     }
     if (!/[a-z]/.test(password)) {
-      setError(
-        'Password must contain at least one lowercase letter.'
-      );
+      setError('Password harus mengandung setidaknya satu huruf kecil.');
       setIsLoading(false);
       return;
     }
     if (!/[0-9]/.test(password)) {
-      setError('Password must contain at least one number.');
+      setError('Password harus mengandung setidaknya satu angka.');
       setIsLoading(false);
       return;
     }
     if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
-      setError(
-        'Password must contain at least one special character.'
-      );
+      setError('Password harus mengandung setidaknya satu karakter spesial (!, @, $, %, ^, &, *, +, #).');
       setIsLoading(false);
       return;
     }
@@ -87,30 +81,27 @@ export function ResetPasswordForm() {
       if (response.ok) {
         setIsSuccess(true);
         toast({
-          title: 'Password Reset Successful',
-          description:
-            'Your password has been updated. You can now log in with your new password.',
+          title: 'Password Berhasil Diubah',
+          description: 'Anda sekarang bisa login dengan password baru Anda.',
           variant: 'default',
         });
-        // Optionally redirect to login page after a short delay
         setTimeout(() => {
           router.push('/auth');
         }, 3000);
       } else {
-        setError(data.error || 'Failed to reset password.');
+        setError(data.error || 'Gagal mengubah password.');
         toast({
-          title: 'Password Reset Failed',
-          description: data.error || 'An unexpected error occurred.',
+          title: 'Gagal Mengubah Password',
+          description: data.error || 'Terjadi kesalahan tidak terduga.',
           variant: 'destructive',
         });
       }
     } catch (err) {
       console.error('Reset password error:', err);
-      setError('An unexpected error occurred. Please try again.');
+      setError('Terjadi kesalahan tidak terduga. Silakan coba lagi.');
       toast({
-        title: 'Password Reset Failed',
-        description:
-          'An unexpected error occurred. Please try again.',
+        title: 'Gagal Mengubah Password',
+        description: 'Terjadi kesalahan pada sistem. Silakan coba lagi.',
         variant: 'destructive',
       });
     } finally {
@@ -129,8 +120,7 @@ export function ResetPasswordForm() {
             Password Berhasil Diubah
           </h1>
           <p className="text-slate-400">
-            Password Anda telah berhasil diubah. Anda akan diarahkan
-            ke halaman login.
+            Anda akan diarahkan kembali ke halaman login dalam beberapa saat.
           </p>
         </div>
       </div>
@@ -148,9 +138,7 @@ export function ResetPasswordForm() {
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="space-y-2">
-          <Label
-            htmlFor="password"
-            className="text-white font-medium">
+          <Label htmlFor="password" className="text-white font-medium">
             Password Baru
           </Label>
           <div className="relative">
@@ -167,7 +155,8 @@ export function ResetPasswordForm() {
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-white transition-colors">
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-white transition-colors"
+            >
               {showPassword ? (
                 <EyeOff className="w-5 h-5" />
               ) : (
@@ -178,9 +167,7 @@ export function ResetPasswordForm() {
         </div>
 
         <div className="space-y-2">
-          <Label
-            htmlFor="confirm-password"
-            className="text-white font-medium">
+          <Label htmlFor="confirm-password" className="text-white font-medium">
             Konfirmasi Password Baru
           </Label>
           <div className="relative">
@@ -196,10 +183,9 @@ export function ResetPasswordForm() {
             />
             <button
               type="button"
-              onClick={() =>
-                setShowConfirmPassword(!showConfirmPassword)
-              }
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-white transition-colors">
+              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-white transition-colors"
+            >
               {showConfirmPassword ? (
                 <EyeOff className="w-5 h-5" />
               ) : (
@@ -207,24 +193,23 @@ export function ResetPasswordForm() {
               )}
             </button>
           </div>
-          {error && (
-            <p className="text-red-500 text-sm mt-2">{error}</p>
-          )}
+          {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
         </div>
 
         <Button
           type="submit"
           disabled={isLoading}
-          className="w-full bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 text-white font-medium py-3 rounded-lg transition-all duration-300 transform hover:scale-105">
+          className="w-full bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 text-white font-medium py-3 rounded-lg transition-all duration-300 transform hover:scale-105"
+        >
           {isLoading ? (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center justify-center gap-2">
               <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              Mengatur Ulang Password...
+              <span>Menyimpan...</span>
             </div>
           ) : (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center justify-center gap-2">
               <Lock className="w-4 h-4" />
-              Reset Password
+              <span>Reset Password</span>
             </div>
           )}
         </Button>

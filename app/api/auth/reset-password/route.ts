@@ -1,34 +1,33 @@
-import { type NextRequest, NextResponse } from "next/server"
-import { supabaseAdmin } from "@/lib/supabase"
-import bcrypt from "bcryptjs"
+// FOR ANALYSIS/app/api/auth/reset-password/route.ts
+
+import { type NextRequest, NextResponse } from "next/server";
+import { supabaseAdmin } from "@/lib/supabase";
+import bcrypt from "bcryptjs";
 
 export async function POST(request: NextRequest) {
   try {
-    const { token, newPassword } = await request.json()
+    const { token, newPassword } = await request.json();
 
     if (!token || !newPassword) {
-      return NextResponse.json({ error: "Token and new password are required" }, { status: 400 })
+      return NextResponse.json({ error: "Token dan password baru wajib diisi." }, { status: 400 });
     }
 
-    // Find user by reset token and check expiry
     const { data: user, error: userError } = await supabaseAdmin
       .from("users")
       .select("id, reset_token_expiry")
       .eq("reset_token", token)
-      .single()
+      .single();
 
     if (userError || !user) {
-      return NextResponse.json({ error: "Invalid or expired token." }, { status: 400 })
+      return NextResponse.json({ error: "Token tidak valid atau sudah digunakan." }, { status: 400 });
     }
 
     if (new Date(user.reset_token_expiry) < new Date()) {
-      return NextResponse.json({ error: "Token has expired." }, { status: 400 })
+      return NextResponse.json({ error: "Token sudah kedaluwarsa." }, { status: 400 });
     }
 
-    // Hash the new password
-    const hashedPassword = await bcrypt.hash(newPassword, 10)
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-    // Update user's password and clear reset token fields
     const { error: updateError } = await supabaseAdmin
       .from("users")
       .update({
@@ -36,16 +35,16 @@ export async function POST(request: NextRequest) {
         reset_token: null,
         reset_token_expiry: null,
       })
-      .eq("id", user.id)
+      .eq("id", user.id);
 
     if (updateError) {
-      console.error("Database error:", updateError)
-      return NextResponse.json({ error: "Failed to reset password." }, { status: 500 })
+      console.error("Database error:", updateError);
+      return NextResponse.json({ error: "Gagal mengubah password." }, { status: 500 });
     }
 
-    return NextResponse.json({ message: "Password reset successfully." })
+    return NextResponse.json({ message: "Password berhasil diubah." });
   } catch (error) {
-    console.error("Reset password API error:", error)
-    return NextResponse.json({ error: "Internal server error." }, { status: 500 })
+    console.error("Reset password API error:", error);
+    return NextResponse.json({ error: "Terjadi kesalahan internal pada server." }, { status: 500 });
   }
 }

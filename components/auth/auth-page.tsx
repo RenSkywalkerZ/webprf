@@ -1,14 +1,16 @@
+// FOR ANALYSIS/components/auth/auth-page.tsx
+
 'use client';
 import { useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { LoginForm } from './login-form';
 import { RegisterForm } from './register-form';
 import { ForgotPassword } from './forgot-password';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast'; // Pastikan menggunakan hook yang benar
 import { useRouter } from 'next/navigation';
 
 interface AuthPageProps {
-  // onAuthenticated is no longer passed from the parent Server Component
+  // Props kosong karena state dikelola di sini
 }
 
 export function AuthPage({}: AuthPageProps) {
@@ -30,23 +32,19 @@ export function AuthPage({}: AuthPageProps) {
       });
 
       if (result?.error) {
-        // Provide a generic error message for security and user-friendliness
         return {
           success: false,
-          message: 'Email or password is incorrect.',
+          message: 'Email atau password salah.', // Diterjemahkan
         };
       }
-
-      // Show toast and delay redirect to allow toast to display
-      setTimeout(() => {
-        router.push('/dashboard');
-      }, 2000); // Delay redirect by 2 seconds to show toast
+      
+      // Logika redirect dan toast sudah dipindahkan ke login-form.tsx
       return { success: true };
     } catch (error) {
       console.error('Login error:', error);
       return {
         success: false,
-        message: 'An unexpected error occurred.',
+        message: 'Terjadi kesalahan tidak terduga.', // Diterjemahkan
       };
     }
   };
@@ -71,15 +69,16 @@ export function AuthPage({}: AuthPageProps) {
       const data = await response.json();
 
       if (!response.ok) {
+        // Menggunakan pesan error dari API secara langsung
         return {
           success: false,
-          message: data.error || 'Registration failed.',
+          message: data.error || 'Registrasi gagal.',
         };
       }
 
       toast({
-        title: 'Registrasi berhasil!',
-        description: 'Silakan login.',
+        title: 'Registrasi Berhasil!',
+        description: 'Akun Anda telah dibuat. Silakan login.',
         variant: 'default',
       });
       setCurrentView('login');
@@ -88,7 +87,7 @@ export function AuthPage({}: AuthPageProps) {
       console.error('Registration error:', error);
       return {
         success: false,
-        message: 'An unexpected error occurred during registration.',
+        message: 'Terjadi kesalahan tidak terduga saat registrasi.',
       };
     }
   };

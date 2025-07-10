@@ -1,7 +1,10 @@
+// FOR ANALYSIS/components/auth/login-form.tsx
+
 'use client';
 import { useState } from 'react';
 import type React from 'react';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast'; // Pastikan menggunakan hook yang benar
+import { useRouter } from 'next/navigation';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,6 +27,7 @@ export function LoginForm({
 }: LoginFormProps) {
   const [email, setEmail] = useState('');
   const { toast } = useToast();
+  const router = useRouter();
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -31,41 +35,40 @@ export function LoginForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Prevent double submission
     if (isLoading) return;
-    
+
     setIsLoading(true);
-    setLoginError(null); // Clear previous errors
+    setLoginError(null);
 
     try {
       const result = await onLogin(email, password);
-      
+
       if (!result.success) {
-        setLoginError(
-          result.message || 'An unexpected error occurred.'
-        );
+        setLoginError(result.message || 'Terjadi kesalahan tidak terduga.');
         toast({
-          title: 'Login Failed',
-          description:
-            result.message || 'An unexpected error occurred.',
+          title: 'Login Gagal',
+          description: result.message || 'Silakan periksa kembali data Anda.',
           variant: 'destructive',
         });
+        setIsLoading(false); // Hentikan loading jika gagal
       } else {
+        // Biarkan loading sampai redirect, agar tombol tidak bisa diklik lagi
         toast({
-          title: 'Login Successful',
-          description: 'You have successfully logged in.',
+          title: 'Login Berhasil!',
+          description: 'Anda akan segera diarahkan ke dashboard.',
           variant: 'default',
         });
+        setTimeout(() => {
+          router.push('/dashboard');
+        }, 1500); // Jeda untuk menampilkan toast
       }
     } catch (error) {
-      setLoginError('An unexpected error occurred.');
+      setLoginError('Terjadi kesalahan tidak terduga.');
       toast({
-        title: 'Login Failed',
-        description: 'An unexpected error occurred.',
+        title: 'Login Gagal',
+        description: 'Terjadi kesalahan pada sistem. Silakan coba lagi.',
         variant: 'destructive',
       });
-    } finally {
       setIsLoading(false);
     }
   };
@@ -100,9 +103,7 @@ export function LoginForm({
         </div>
 
         <div className="space-y-2">
-          <Label
-            htmlFor="password"
-            className="text-white font-medium">
+          <Label htmlFor="password" className="text-white font-medium">
             Password
           </Label>
           <div className="relative">
@@ -121,7 +122,8 @@ export function LoginForm({
               type="button"
               onClick={() => setShowPassword(!showPassword)}
               disabled={isLoading}
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
               {showPassword ? (
                 <EyeOff className="w-5 h-5" />
               ) : (
@@ -139,7 +141,8 @@ export function LoginForm({
             type="button"
             onClick={onForgotPassword}
             disabled={isLoading}
-            className="text-cyan-400 hover:text-cyan-300 text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+            className="text-cyan-400 hover:text-cyan-300 text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
             Lupa password?
           </button>
         </div>
@@ -147,15 +150,16 @@ export function LoginForm({
         <Button
           type="submit"
           disabled={isLoading}
-          className="w-full bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 text-white font-medium py-3 rounded-lg transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100">
+          className="w-full bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 text-white font-medium py-3 rounded-lg transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+        >
           {isLoading ? (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center justify-center gap-2">
               <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              Memproses...
+              <span>Memproses...</span>
             </div>
           ) : (
-            <div className="flex items-center gap-2">
-              Masuk
+            <div className="flex items-center justify-center gap-2">
+              <span>Masuk</span>
               <ArrowRight className="w-4 h-4" />
             </div>
           )}
@@ -168,7 +172,8 @@ export function LoginForm({
           <button
             onClick={onSwitchToRegister}
             disabled={isLoading}
-            className="text-cyan-400 hover:text-cyan-300 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+            className="text-cyan-400 hover:text-cyan-300 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
             Daftar sekarang
           </button>
         </p>
