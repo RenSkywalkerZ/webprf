@@ -247,13 +247,13 @@ export function PaymentPage({ registrationId }: PaymentPageProps) {
                       size="sm"
                       onClick={() => {
                         const guideBookLinks = {
-                          "Physics Competition": "/guidebook/physics-competition",
-                          "Scientific Writing": "/guidebook/scientific-writing", 
-                          "Science Project": "/guidebook/science-project",
-                          "Lomba Praktikum": "/guidebook/lomba-praktikum",
-                          "Cerdas Cermat": "/guidebook/lomba-cerdas-cermat",
-                          "Lomba Roket Air": "/guidebook/lomba-roket-air",
-                          "Depict Physics": "/guidebook/depict-physics"
+                          "Physics Competition": "https://tinyurl.com/PhysicsCompetitionGBPRFXIII",
+                          "Scientific Writing": "https://tinyurl.com/ScientificWritingsGBPRFXIII", 
+                          "Science Project": "https://tinyurl.com/ScienceProjectGBPRFXIII",
+                          "Lomba Praktikum": "https://tinyurl.com/PraktikumGBPRFXIII",
+                          "Cerdas Cermat": "https://tinyurl.com/CerdasCermatGBPRFXIII",
+                          "Lomba Roket Air": "https://tinyurl.com/RoketAirPRFXIII/lomba-roket-air",
+                          "Depict Physics": "https://tinyurl.com/DepictPhysicsGBPRFXIII"
                         };
                         const link = guideBookLinks[competitionTitle as keyof typeof guideBookLinks];
                         if (link) {

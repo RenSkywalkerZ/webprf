@@ -409,9 +409,12 @@ export function EducationFields({ formData, validationErrors, onInputChange, onF
           id="grade"
           value={formData.grade}
           onChange={(e) => onInputChange("grade", e.target.value)}
-          className="bg-slate-800/50 border-slate-600 text-white"
+          className={`bg-slate-800/50 border-slate-600 text-white ${
+            validationErrors.grade ? "border-red-500" : ""
+          }`}
           placeholder="Contoh: Kelas 12 IPA / Semester 6"
         />
+        {validationErrors.grade && <span className="text-xs text-red-400">{validationErrors.grade}</span>}
       </div>
 
       <div className="space-y-2">

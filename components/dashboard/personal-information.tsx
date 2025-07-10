@@ -92,7 +92,9 @@ export function PersonalInformation({ userData, onUpdateUser, registrations = []
     ]
 
     if (formData.educationLevel && formData.educationLevel !== "umum") {
-      requiredFields.push(formData.school)
+      requiredFields.push(formData.school);
+      // Add 'grade' to the required fields array
+      requiredFields.push(formData.grade);
     }
 
     const completedFields = requiredFields.filter((field) => field && field.trim() !== "").length
@@ -154,8 +156,14 @@ export function PersonalInformation({ userData, onUpdateUser, registrations = []
     if (!formData.educationLevel) errors.educationLevel = "Jenjang pendidikan wajib dipilih"
     if (!formData.gender) errors.gender = "Jenis kelamin wajib dipilih"
 
-    if (formData.educationLevel && formData.educationLevel !== "umum" && !formData.school.trim()) {
-      errors.school = "Asal sekolah/universitas wajib diisi untuk pelajar/mahasiswa"
+    if (formData.educationLevel && formData.educationLevel !== "umum") {
+      if (!formData.school.trim()) {
+        errors.school = "Asal sekolah/universitas wajib diisi untuk pelajar/mahasiswa";
+      }
+      // Add this check for the 'grade' field
+      if (!formData.grade.trim()) {
+        errors.grade = "Kelas/Semester wajib diisi untuk pelajar/mahasiswa";
+      }
     }
 
     setValidationErrors(errors)
