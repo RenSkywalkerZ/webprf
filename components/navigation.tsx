@@ -111,20 +111,6 @@ export function Navigation() {
                 <Trophy size={16} />
                 <span>Events</span>
               </a>
-              <a
-                href="#guidebook"
-                className="flex items-center space-x-2 text-white/90 hover:text-white transition-colors text-sm font-medium py-2"
-              >
-                <BookOpen size={16} />
-                <span>Guidebook</span>
-              </a>
-              <a
-                href="#location"
-                className="flex items-center space-x-2 text-white/90 hover:text-white transition-colors text-sm font-medium py-2"
-              >
-                <MapPin size={16} />
-                <span>Event Map</span>
-              </a>
               <Button
                 onClick={handleAuthRedirect}
                 className="bg-white/20 hover:bg-white/30 text-white border-0 rounded-full px-4 py-2 text-sm font-medium backdrop-blur-sm w-full mt-2"
