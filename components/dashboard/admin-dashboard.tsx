@@ -2,7 +2,8 @@
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Shield, Users, Trophy, TrendingUp, Calendar, CheckCircle, Clock } from "lucide-react"
+// Tambahkan UserCog atau ikon lain untuk admin
+import { Shield, Users, Trophy, TrendingUp, Calendar, CheckCircle, Clock, UserCog } from "lucide-react" 
 
 interface AdminDashboardProps {
   userData: any
@@ -11,6 +12,7 @@ interface AdminDashboardProps {
 export function AdminDashboard({ userData }: AdminDashboardProps) {
   const [stats, setStats] = useState({
     totalUsers: 0,
+    totalAdmins: 0, // PERUBAHAN: State baru untuk total admin
     totalRegistrations: 0,
     pendingApprovals: 0,
     activeCompetitions: 8,
@@ -28,14 +30,14 @@ export function AdminDashboard({ userData }: AdminDashboardProps) {
     try {
       console.log("🔄 Fetching dashboard data...")
 
-      // Fetch real stats
       const [participantsRes, usersRes, batchesRes] = await Promise.all([
         fetch("/api/admin/participants"),
         fetch("/api/admin/users"),
-        fetch("/api/batches/current"), // Just get current batch info for display
+        fetch("/api/batches/current"),
       ])
 
       let totalUsers = 0
+      let totalAdmins = 0 // PERUBAHAN: Variabel baru untuk menampung hitungan admin
       let totalRegistrations = 0
       let pendingApprovals = 0
 
@@ -50,8 +52,10 @@ export function AdminDashboard({ userData }: AdminDashboardProps) {
 
       if (usersRes.ok) {
         const { users } = await usersRes.json()
-        totalUsers = users.length
-        console.log("👥 Users data:", { totalUsers })
+        // PERUBAHAN: Filter pengguna berdasarkan peran
+        totalUsers = users.filter((u: any) => u.role === 'user').length
+        totalAdmins = users.filter((u: any) => u.role === 'admin').length
+        console.log("👥 Users data:", { totalUsers, totalAdmins })
       } else {
         console.error("❌ Failed to fetch users:", usersRes.status)
       }
@@ -67,6 +71,7 @@ export function AdminDashboard({ userData }: AdminDashboardProps) {
 
       setStats({
         totalUsers,
+        totalAdmins, // PERUBAHAN: Simpan hitungan admin ke state
         totalRegistrations,
         pendingApprovals,
         activeCompetitions: 8,
@@ -99,8 +104,9 @@ export function AdminDashboard({ userData }: AdminDashboardProps) {
           <div className="h-8 bg-slate-700 rounded w-1/3 mb-2"></div>
           <div className="h-4 bg-slate-700 rounded w-1/2"></div>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {[...Array(4)].map((_, i) => (
+        {/* PERUBAHAN: Skeleton loading sekarang menjadi 5 card */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+          {[...Array(5)].map((_, i) => (
             <div key={i} className="animate-pulse bg-slate-800 rounded-lg p-6">
               <div className="h-4 bg-slate-700 rounded w-1/2 mb-2"></div>
               <div className="h-8 bg-slate-700 rounded w-1/3"></div>
@@ -154,15 +160,29 @@ export function AdminDashboard({ userData }: AdminDashboardProps) {
       )}
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {/* PERUBAHAN: Grid sekarang memiliki 5 kolom untuk mengakomodasi card baru */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
         <Card className="bg-gradient-to-br from-blue-500/10 to-blue-600/10 border-blue-500/30">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-blue-300 text-sm font-medium">Total Pengguna</p>
+                <p className="text-blue-300 text-sm font-medium">Total Peserta</p>
                 <p className="text-3xl font-bold text-white">{stats.totalUsers}</p>
               </div>
               <Users className="w-8 h-8 text-blue-400" />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* PERUBAHAN: CARD BARU UNTUK ADMIN */}
+        <Card className="bg-gradient-to-br from-red-500/10 to-red-600/10 border-red-500/30">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-red-300 text-sm font-medium">Total Admin</p>
+                <p className="text-3xl font-bold text-white">{stats.totalAdmins}</p>
+              </div>
+              <UserCog className="w-8 h-8 text-red-400" />
             </div>
           </CardContent>
         </Card>
@@ -230,8 +250,6 @@ export function AdminDashboard({ userData }: AdminDashboardProps) {
           </CardContent>
         </Card>
       </div>
-
-
     </div>
   )
 }
