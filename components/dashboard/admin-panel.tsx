@@ -999,7 +999,7 @@ const handleBulkStatusChange = async () => {
           <DialogHeader>
             <DialogTitle className="text-white">Bukti Pembayaran</DialogTitle>
           </DialogHeader>
-          <div className="flex justify-center items-center p-4">
+          <div className="flex justify-center items-center p-4 max-h-[80vh] overflow-y-auto">
             {currentProofUrl ? (
               <img
                 src={currentProofUrl}

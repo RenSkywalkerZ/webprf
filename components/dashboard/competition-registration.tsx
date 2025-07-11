@@ -651,7 +651,7 @@ const handleConfirmRegistration = async () => {
           <div className="flex gap-2 mt-1">
             {/* Badge/Kategori manual */}
             <Badge variant="outline" className="text-xs border-slate-600 text-slate-300">
-              TK - SMA/MA
+              TK - SMA/Sederajat
             </Badge>
             <Badge className="text-xs bg-purple-500/20 text-purple-300 border-purple-500/30">
               Tim/Individu
@@ -664,10 +664,19 @@ const handleConfirmRegistration = async () => {
   <CardContent className="space-y-4">
     {/* Deskripsi manual */}
     <CardDescription className="text-slate-300 leading-relaxed">
-      Adu kreativitas dan kemampuan rekayasa dalam merancang, membangun, dan memprogram dalam bidang robotika untuk menyelesaikan misi yang menantang.
+      Adu kreativitas dan kemampuan rekayasa dalam merancang, membangun, dan memprogram dalam bidang robotika untuk menyelesaikan misi yang menantang. Silakan baca Guidebook pada <strong>"Info Pendaftaran"</strong>, pendaftaran dilakukan pada Google Form <strong>"Form Pendaftaran"</strong>
     </CardDescription>
     <CardDescription className="text-slate-300 leading-relaxed">
-      Silakan baca Guidebook pada <strong>"Info Pendaftaran"</strong>, pendaftaran dilakukan pada Google Form <strong>"Form Pendaftaran"</strong>
+      {/* Price Display */}
+                <div className="bg-slate-800/50 rounded-lg p-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-slate-400 text-sm">Masukkan <strong>KODE REFERRAL</strong>:</p>
+                      <p className="text-white font-semibold text-lg">RBTPRF13</p>
+                      <p className="text-slate-400 text-sm">pada Form Pendaftaran</p>
+                    </div>
+                  </div>
+                </div>
     </CardDescription>
 
     {/* Tombol dengan link manual */}
