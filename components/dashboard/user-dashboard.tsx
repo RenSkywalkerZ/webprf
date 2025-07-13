@@ -150,7 +150,7 @@ export function UserDashboard({ userData }: UserDashboardProps) {
           Selamat datang, {userData?.full_name || userData?.fullName || "Peserta"}! 👋
         </h1>
         <p className="text-slate-400">
-          Selamat datang di dashboard PRF XIII. Kelola pendaftaran kompetisi dan informasi pribadi Anda di sini.
+          Selamat datang di dashboard PRF XIII.
         </p>
       </div>
 
@@ -242,7 +242,7 @@ export function UserDashboard({ userData }: UserDashboardProps) {
         <CardHeader>
           <CardTitle className="text-white flex items-center gap-2">
             <Trophy className="w-5 h-5 text-orange-400" />
-            Status Pendaftaran Kompetisi
+            Status Pendaftaran Lomba
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -303,7 +303,7 @@ export function UserDashboard({ userData }: UserDashboardProps) {
                     </div>
                     <p className="text-slate-300 text-sm">
                       Selamat! Pendaftaran Anda telah disetujui. Silakan pantau informasi lebih lanjut mengenai jadwal
-                      dan lokasi kompetisi.
+                      dan lokasi lomba.
                     </p>
                   </div>
                 )}
@@ -341,7 +341,7 @@ export function UserDashboard({ userData }: UserDashboardProps) {
                 <Trophy className="w-16 h-16 mx-auto mb-4 text-blue-400" />
                 <h3 className="text-white font-semibold mb-2">Belum Ada Pendaftaran</h3>
                 <p className="text-slate-300 text-sm mb-4">
-                  Anda belum mendaftar kompetisi apapun. Silakan pilih kompetisi yang ingin Anda ikuti.
+                  Anda belum mendaftar lomba apapun. Silakan pilih lomba yang ingin Anda ikuti pada laman Pendaftaran Lomba.
                 </p>
               </div>
             </div>
