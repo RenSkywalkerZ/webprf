@@ -106,9 +106,9 @@ export function CompetitionDetails({ userData }: CompetitionDetailsProps) {
       case "approved":
         return [
           "✅ Pembayaran telah diverifikasi",
-          "📞 Hubungi Admin, CP ada pada \"Kontak\" jika ada pertanyaan",
-          "📱 Bergabung dengan grup WhatsApp kompetisi",
-          "🗓️ Catat tanggal pelaksanaan kompetisi",
+          "📞 Hubungi Admin jika ada pertanyaan, CP ada pada \"Kontak\"",
+          "📱 Bergabung dengan grup WhatsApp",
+          "🗓️ Catat tanggal pelaksanaan lomba",
         ]
       case "pending":
         return [
@@ -120,7 +120,6 @@ export function CompetitionDetails({ userData }: CompetitionDetailsProps) {
       case "rejected":
         return [
           "❌ Pembayaran tidak dapat diverifikasi",
-          "📧 Cek email untuk alasan penolakan",
           "💬 Hubungi admin untuk klarifikasi (Hugo: 0851 1738 5115)",
           "🔄 Lakukan pendaftaran ulang jika diperlukan",
         ]
@@ -439,17 +438,17 @@ export function CompetitionDetails({ userData }: CompetitionDetailsProps) {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-white mb-2">Detail Kompetisi</h1>
-        <p className="text-slate-400">Informasi lengkap tentang kompetisi yang Anda ikuti</p>
+        <h1 className="text-3xl font-bold text-white mb-2">Detail Lomba</h1>
+        <p className="text-slate-400">Informasi lengkap tentang lomba yang Anda ikuti</p>
       </div>
 
       {registrations.length === 0 ? (
         <Card className="bg-slate-900/50 border-slate-700">
           <CardContent className="text-center py-12">
             <Trophy className="w-16 h-16 mx-auto mb-4 text-slate-600" />
-            <h3 className="text-xl font-semibold text-white mb-2">Belum Ada Kompetisi Terdaftar</h3>
+            <h3 className="text-xl font-semibold text-white mb-2">Belum Ada Lomba Terdaftar</h3>
             <p className="text-slate-400 mb-6">
-              Anda belum mendaftar kompetisi apapun. Mulai daftarkan diri Anda sekarang!
+              Anda belum mendaftar lomba apapun. Mulai daftarkan diri Anda sekarang!
             </p>
           </CardContent>
         </Card>
@@ -529,7 +528,7 @@ export function CompetitionDetails({ userData }: CompetitionDetailsProps) {
                       <div>
                         <h3 className="text-white font-semibold mb-3 flex items-center gap-2">
                           <Info className="w-4 h-4 text-blue-400" />
-                          Informasi Kompetisi
+                          Informasi Lomba
                         </h3>
                         <div className="space-y-2 text-sm">
                           <div className="flex justify-between">
@@ -574,7 +573,7 @@ export function CompetitionDetails({ userData }: CompetitionDetailsProps) {
                           <span className="text-green-300 font-semibold">Selamat! Pendaftaran Anda Disetujui</span>
                         </div>
                         <p className="text-slate-300 text-sm mb-4">
-                          Pembayaran Anda telah diverifikasi. Silakan bergabung dengan grup WhatsApp kompetisi untuk
+                          Pembayaran Anda telah diverifikasi. Silakan bergabung dengan grup WhatsApp lomba untuk
                           mendapatkan informasi terbaru.
                         </p>
                         <div className="flex gap-2">
@@ -641,7 +640,7 @@ export function CompetitionDetails({ userData }: CompetitionDetailsProps) {
                           <Calendar className="w-5 h-5 text-cyan-400" />
                           Jadwal {competition?.title}
                         </CardTitle>
-                        <p className="text-slate-400 text-sm">Jadwal khusus untuk kompetisi yang Anda ikuti</p>
+                        <p className="text-slate-400 text-sm">Jadwal khusus untuk lomba yang Anda ikuti</p>
                       </CardHeader>
                       <CardContent>
                         <div className="space-y-4">
@@ -703,7 +702,7 @@ export function CompetitionDetails({ userData }: CompetitionDetailsProps) {
                   <Lock className="w-16 h-16 mx-auto mb-4 text-slate-600" />
                   <h3 className="text-xl font-semibold text-white mb-2">Akses Terbatas</h3>
                   <p className="text-slate-400">
-                    Jadwal kompetisi hanya dapat diakses setelah pembayaran Anda disetujui.
+                    Jadwal lomba hanya dapat diakses setelah pembayaran Anda disetujui.
                   </p>
                 </CardContent>
               </Card>
