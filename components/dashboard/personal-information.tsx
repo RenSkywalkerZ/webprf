@@ -287,28 +287,30 @@ export function PersonalInformation({ userData, onUpdateUser, registrations = []
         </Card>
       )}
 
-      <Card className="bg-amber-500/10 border-amber-500/30 mt-4">
-        <CardContent className="p-4">
-          <div className="flex items-start gap-3">
-            <div className="flex-shrink-0 mt-1">
-              <AlertTriangle className="w-5 h-5 text-amber-400" />
+      {!isAdmin && (
+        <Card className="bg-amber-500/10 border-amber-500/30 mt-4">
+          <CardContent className="p-4">
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0 mt-1">
+                <AlertTriangle className="w-5 h-5 text-amber-400" />
+              </div>
+              <div>
+                <h3 className="text-amber-200 font-semibold">Petunjuk Penting Pengisian Data</h3>
+                <ul className="list-disc pl-5 mt-2 space-y-1 text-slate-300 text-sm">
+                  <li>
+                    <strong>Untuk Pendaftar Lomba Individu (Physics Competition):</strong>
+                    <p className="text-slate-400">Wajib mengisi semua data pada laman ini dengan lengkap dan benar untuk keperluan verifikasi.</p>
+                  </li>
+                  <li>
+                    <strong>Untuk Pendaftar Lomba Tim (selain Physics Competition):</strong>
+                    <p className="text-slate-400">Laman ini boleh diisi oleh perwakilan (misal: ketua tim, guru, wali murid). Data lengkap setiap anggota akan diisi pada form pendaftaran tim setelah memilih lomba.</p>
+                  </li>
+                </ul>
+              </div>
             </div>
-            <div>
-              <h3 className="text-amber-200 font-semibold">Petunjuk Penting Pengisian Data</h3>
-              <ul className="list-disc pl-5 mt-2 space-y-1 text-slate-300 text-sm">
-                <li>
-                  <strong>Untuk Pendaftar Lomba Individu (Physics Competition):</strong>
-                  <p className="text-slate-400">Wajib mengisi semua data pada laman ini dengan lengkap dan benar untuk keperluan verifikasi.</p>
-                </li>
-                <li>
-                  <strong>Untuk Pendaftar Lomba Tim (selain Physics Competition):</strong>
-                  <p className="text-slate-400">Laman ini boleh diisi oleh perwakilan (misal: ketua tim, guru, wali murid). Data lengkap setiap anggota akan diisi pada form pendaftaran tim setelah memilih lomba.</p>
-                </li>
-              </ul>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Enhanced Card with Lock Overlay */}
       <Card className={`bg-slate-900/50 border-slate-700 relative ${isProfileLocked ? 'overflow-hidden' : ''}`}>

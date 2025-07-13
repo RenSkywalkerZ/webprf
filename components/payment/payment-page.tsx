@@ -288,7 +288,7 @@ export function PaymentPage({ registrationId }: PaymentPageProps) {
                         <Badge
                           className={`text-xs ${member.role === "leader" ? "bg-yellow-500/20 text-yellow-300 border-yellow-500/30" : "bg-blue-500/20 text-blue-300 border-blue-500/30"}`}
                         >
-                          {member.role === "leader" ? "Ketua Tim" : `Anggota ${index + 1}`}
+                          {member.role === "leader" ? "Ketua Tim" : `Anggota ${index}`}
                         </Badge>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">

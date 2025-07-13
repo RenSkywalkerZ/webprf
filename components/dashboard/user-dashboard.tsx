@@ -17,36 +17,43 @@ export function UserDashboard({ userData }: UserDashboardProps) {
 
   useEffect(() => {
     const fetchDashboardData = async () => {
+      setIsLoading(true); // Set loading ke true di awal
       try {
-        // Fetch user registrations
-        const registrationsResponse = await fetch("/api/users/registrations")
+        // Jalankan semua fetch secara bersamaan
+        const [registrationsResponse, competitionsResponse, batchResponse] = await Promise.all([
+          fetch("/api/users/registrations"),
+          fetch("/api/competitions"),
+          fetch("/api/batches/current")
+        ]);
+
+        // Proses hasil dari registrations
         if (registrationsResponse.ok) {
-          const { registrations } = await registrationsResponse.json()
-          setRegistrations(registrations)
+          const { registrations } = await registrationsResponse.json();
+          setRegistrations(registrations);
         }
 
-        // Fetch competitions
-        const competitionsResponse = await fetch("/api/competitions")
+        // Proses hasil dari competitions
         if (competitionsResponse.ok) {
-          const { competitions } = await competitionsResponse.json()
-          setCompetitions(competitions)
+          const { competitions } = await competitionsResponse.json();
+          setCompetitions(competitions);
         }
 
-        // Fetch current batch
-        const batchResponse = await fetch("/api/batches/current")
+        // Proses hasil dari current batch
         if (batchResponse.ok) {
-          const { batch } = await batchResponse.json()
-          setCurrentBatch(batch)
+          const { batch } = await batchResponse.json();
+          setCurrentBatch(batch);
         }
-      } catch (error) {
-        console.error("Error fetching dashboard data:", error)
-      } finally {
-        setIsLoading(false)
-      }
-    }
 
-    fetchDashboardData()
-  }, [userData])
+      } catch (error) {
+        console.error("Error fetching dashboard data:", error);
+        // Anda bisa menambahkan state untuk menampilkan pesan error di UI
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, [userData]); // Tetap gunakan userData sebagai dependency
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -104,16 +111,31 @@ export function UserDashboard({ userData }: UserDashboardProps) {
   if (isLoading) {
     return (
       <div className="space-y-6">
+        {/* Skeleton for Welcome Header */}
         <div className="animate-pulse">
-          <div className="h-8 bg-slate-700 rounded w-1/3 mb-2"></div>
-          <div className="h-4 bg-slate-700 rounded w-1/2"></div>
+          <div className="h-8 bg-slate-700 rounded w-1/2 mb-3"></div>
+          <div className="h-4 bg-slate-700 rounded w-3/4"></div>
         </div>
-        <div className="mt-6 space-y-4">
-          <div className="animate-pulse bg-slate-800 rounded-lg h-32"></div>
-          <div className="animate-pulse bg-slate-800 rounded-lg h-48"></div>
+
+        {/* Skeleton for Important Notice Card */}
+        <div className="animate-pulse bg-slate-800/50 rounded-lg h-36 border border-slate-700"></div>
+        
+        {/* Skeleton for Twibbon Card */}
+        <div className="animate-pulse bg-slate-800/50 rounded-lg h-20 border border-slate-700"></div>
+
+        {/* Skeleton for Current Batch Info Card */}
+        <div className="animate-pulse bg-slate-800/50 rounded-lg p-4 sm:p-6 border border-slate-700">
+          <div className="h-5 bg-slate-700 rounded w-1/3 mb-4"></div>
+          <div className="h-16 bg-slate-700/50 rounded-lg"></div>
+        </div>
+
+        {/* Skeleton for Registration Status Card */}
+        <div className="animate-pulse bg-slate-800/50 rounded-lg p-4 sm:p-6 border border-slate-700">
+          <div className="h-5 bg-slate-700 rounded w-1/3 mb-4"></div>
+          <div className="h-24 bg-slate-700/50 rounded-lg"></div>
         </div>
       </div>
-    )
+    );
   }
 
   const registrationInfo = getRegistrationInfo()

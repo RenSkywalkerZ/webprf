@@ -9,6 +9,7 @@ import { ConfirmationDialog } from "@/components/ui/confirmation-dialog"
 import { useToast } from "@/hooks/use-toast"
 import { useRouter } from "next/navigation"
 
+// --- INTERFACE TETAP SAMA ---
 interface Competition {
   id: string
   title: string
@@ -42,19 +43,33 @@ interface CompetitionRegistrationProps {
   onRegisterCompetition: (competitionId: string, batch: number) => void
 }
 
+// Komponen baru untuk Full Screen Loading
+const FullScreenLoading = ({ message }: { message: string }) => (
+  <div className="fixed inset-0 bg-slate-900 bg-opacity-80 backdrop-blur-sm flex items-center justify-center z-[100]">
+    <div className="text-center">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+      <p className="text-white">{message}</p>
+    </div>
+  </div>
+);
+
 export function CompetitionRegistration({ userData, onRegisterCompetition }: CompetitionRegistrationProps) {
   const router = useRouter()
+  // --- STATE DAN LOGIKA LAINNYA ---
   const [competitions, setCompetitions] = useState<Competition[]>([])
   const [batches, setBatches] = useState<Batch[]>([])
   const [currentBatchId, setCurrentBatchId] = useState<number | null>(null)
   const [registrations, setRegistrations] = useState<Registration[]>([])
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+  const [isSubmitting, setIsSubmitting] = useState(false); // State untuk loading pada tombol
+  const [isRedirecting, setIsRedirecting] = useState(false); // State baru untuk loading halaman penuh
   const [registrationClosed, setRegistrationClosed] = useState(false)
   const [competitionPrices, setCompetitionPrices] = useState<Record<string, string>>({})
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [pendingCompetitionId, setPendingCompetitionId] = useState<string | null>(null);
+  
+  // ... (semua konstanta dan fungsi helper lainnya tetap di sini) ...
   const ICON_MAP: { [key: string]: React.ReactNode } = {
-    // nama ikon (dari DB) : komponen ikon
     book: <BookOpen className="w-6 h-6 text-white" />,
     rocket: <Rocket className="w-6 h-6 text-white" />,
     lab: <FlaskConical className="w-6 h-6 text-white" />,
@@ -65,26 +80,58 @@ export function CompetitionRegistration({ userData, onRegisterCompetition }: Com
     calculator: <Calculator className="w-6 h-6 text-white" />,
   };
   const EDUCATION_LEVEL_MAP: { [key: string]: string } = {
-  tk: "TK",
-  sd: "SD/Sederajat",
-  smp: "SMP/Sederajat",
-  sma: "SMA/Sederajat",
-  universitas: "Universitas/Perguruan Tinggi",
-  umum: "Umum",
+    tk: "TK",
+    sd: "SD/Sederajat",
+    smp: "SMP/Sederajat",
+    sma: "SMA/Sederajat",
+    universitas: "Universitas/Perguruan Tinggi",
+    umum: "Umum",
+  };
+  const { toast } = useToast();
+  const [cancelDialog, setCancelDialog] = useState({
+    isOpen: false,
+    registrationId: null as string | null,
+  });
+
+  const teamCompetitionUUIDs = [
+    "22270c4a-4f38-40fb-854e-daa58336f0d9",
+    "331aeb0c-8851-4638-aa34-6502952f098b",
+    "3d4e5cca-cf3d-45d7-8849-2a614b82f4d4",
+    "43ec1f50-2102-4a4b-995b-e33e61505b22",
+    "4cbe04f2-222b-4d44-8dd2-25821a66d467",
+    "7b8cd68d-74be-4113-b36e-6953634ed53c",
+    "9517aa1c-3d72-4b6d-a30c-0ca4eed9a5b0",
+  ];
+  const COMPETITION_STARTING_PRICES: { [key: string]: number } = {
+    "b4415647-d77b-40af-81ac-956a49498ff2": 100000,
+    "22270c4a-4f38-40fb-854e-daa58336f0d9": 280000,
+    "331aeb0c-8851-4638-aa34-6502952f098b": 90000,
+    "3d4e5cca-cf3d-45d7-8849-2a614b82f4d4": 120000,
+    "43ec1f50-2102-4a4b-995b-e33e61505b22": 250000,
+    "4cbe04f2-222b-4d44-8dd2-25821a66d467": 200000,
+    "9517aa1c-3d72-4b6d-a30c-0ca4eed9a5b0": 150000,
+  };
+  const GUIDEBOOK_LINKS: { [key: string]: string } = {
+    "b4415647-d77b-40af-81ac-956a49498ff2": "https://tinyurl.com/PhysicsCompetitionGBPRFXIII",
+    "3d4e5cca-cf3d-45d7-8849-2a614b82f4d4": "https://tinyurl.com/ScientificWritingsGBPRFXIII", 
+    "9517aa1c-3d72-4b6d-a30c-0ca4eed9a5b0": "https://tinyurl.com/CerdasCermatGBPRFXIII",
+    "331aeb0c-8851-4638-aa34-6502952f098b": "https://tinyurl.com/DepictPhysicsGBPRFXIII",
+    "4cbe04f2-222b-4d44-8dd2-25821a66d467": "https://tinyurl.com/PraktikumGBPRFXIII",
+    "22270c4a-4f38-40fb-854e-daa58336f0d9": "https://tinyurl.com/RoketAirPRFXIII",
+    "43ec1f50-2102-4a4b-995b-e33e61505b22": "https://tinyurl.com/ScienceProjectGBPRFXIII",
+    "7b8cd68d-74be-4113-b36e-6953634ed53c": "https://tinyurl.com/RobotikGBPRFXIII"
+  };
+
+  // ... (semua fungsi lain tetap sama)
+  const openCancelDialog = (registrationId: string) => {
+    setCancelDialog({ isOpen: true, registrationId: registrationId });
   };
   
-  // 1. Fungsi untuk MEMBUKA modal konfirmasi
-const openCancelDialog = (registrationId: string) => {
-    setCancelDialog({ isOpen: true, registrationId: registrationId });
-};
-const { toast } = useToast();
-// 2. Fungsi untuk MENJALANKAN pembatalan setelah dikonfirmasi di modal
-const handleConfirmCancelation = async () => {
+  const handleConfirmCancelation = async () => {
     const { registrationId } = cancelDialog;
     if (!registrationId) return;
 
-    // Set loading state ke true
-    setIsLoading(true);
+    setIsSubmitting(true);
 
     try {
         const response = await fetch(`/api/registrations/${registrationId}`, {
@@ -95,7 +142,6 @@ const handleConfirmCancelation = async () => {
 
         if (response.ok) {
             setRegistrations(prev => prev.filter(r => r.id !== registrationId));
-            // Gunakan toast untuk notifikasi sukses
             toast({
                 title: "Pendaftaran Dibatalkan",
                 description: "Pendaftaran Anda untuk kompetisi ini telah berhasil dibatalkan.",
@@ -104,7 +150,6 @@ const handleConfirmCancelation = async () => {
               window.location.reload();
             }, 100);
         } else {
-            // Gunakan toast untuk notifikasi gagal
             toast({
                 title: "Gagal Membatalkan",
                 description: data.error || "Terjadi kesalahan.",
@@ -112,7 +157,6 @@ const handleConfirmCancelation = async () => {
             });
         }
     } catch (error) {
-        // Gunakan toast untuk notifikasi error sistem
         toast({
             title: "Error",
             description: "Tidak dapat terhubung ke server. Silakan coba lagi.",
@@ -120,59 +164,18 @@ const handleConfirmCancelation = async () => {
         });
         console.error("Cancelation error:", error);
     } finally {
-        // Set loading state ke false dan tutup modal
-        setIsLoading(false);
+        setIsSubmitting(false);
         setCancelDialog({ isOpen: false, registrationId: null });
     }
-};
-  
-  const [cancelDialog, setCancelDialog] = useState({
-  isOpen: false,
-  registrationId: null as string | null,
-  });
-
-  // Define which competitions are team-based using the correct UUIDs
-  const teamCompetitionUUIDs = [
-    "22270c4a-4f38-40fb-854e-daa58336f0d9", // Lomba Roket Air
-    "331aeb0c-8851-4638-aa34-6502952f098b", // Depict Physics
-    "3d4e5cca-cf3d-45d7-8849-2a614b82f4d4", // Scientific Writing
-    "43ec1f50-2102-4a4b-995b-e33e61505b22", // Science Project
-    "4cbe04f2-222b-4d44-8dd2-25821a66d467", // Lomba Praktikum
-    "7b8cd68d-74be-4113-b36e-6953634ed53c", // Lomba Robotik
-    "9517aa1c-3d72-4b6d-a30c-0ca4eed9a5b0", // Cerdas Cermat
-  ]
-  // Taruh ini di bagian atas komponen Anda
-const COMPETITION_STARTING_PRICES: { [key: string]: number } = {
-  // UUID: Harga Awal (dari Batch 1)
-  "b4415647-d77b-40af-81ac-956a49498ff2": 100000,   // Physics Competition
-  "22270c4a-4f38-40fb-854e-daa58336f0d9": 280000,   // Lomba Roket Air
-  "331aeb0c-8851-4638-aa34-6502952f098b": 90000,   // Depict Physics
-  "3d4e5cca-cf3d-45d7-8849-2a614b82f4d4": 120000,   // Scientific Writing
-  "43ec1f50-2102-4a4b-995b-e33e61505b22": 250000,   // Science Project
-  "4cbe04f2-222b-4d44-8dd2-25821a66d467": 200000,   // Lomba Praktikum
-  "9517aa1c-3d72-4b6d-a30c-0ca4eed9a5b0": 150000,   // Cerdas Cermat
-};
-
-const GUIDEBOOK_LINKS: { [key: string]: string } = {
-  "b4415647-d77b-40af-81ac-956a49498ff2": "https://tinyurl.com/PhysicsCompetitionGBPRFXIII",
-  "3d4e5cca-cf3d-45d7-8849-2a614b82f4d4": "https://tinyurl.com/ScientificWritingsGBPRFXIII", 
-  "9517aa1c-3d72-4b6d-a30c-0ca4eed9a5b0": "https://tinyurl.com/CerdasCermatGBPRFXIII",
-  "331aeb0c-8851-4638-aa34-6502952f098b": "https://tinyurl.com/DepictPhysicsGBPRFXIII",
-  "4cbe04f2-222b-4d44-8dd2-25821a66d467": "https://tinyurl.com/PraktikumGBPRFXIII",
-  "22270c4a-4f38-40fb-854e-daa58336f0d9": "https://tinyurl.com/RoketAirPRFXIII",
-  "43ec1f50-2102-4a4b-995b-e33e61505b22": "https://tinyurl.com/ScienceProjectGBPRFXIII",
-  "7b8cd68d-74be-4113-b36e-6953634ed53c": "https://tinyurl.com/RobotikGBPRFXIII"
-};
+  };
 
   useEffect(() => {
     fetchData()
   }, [])
 
-  // Refresh data when component becomes visible (user returns from payment page)
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (!document.hidden) {
-        // Page became visible, refresh registrations
         fetchRegistrations()
       }
     }
@@ -182,15 +185,20 @@ const GUIDEBOOK_LINKS: { [key: string]: string } = {
   }, [])
 
   useEffect(() => {
-    competitions.forEach((competition: Competition) => {
-      getCompetitionPrice(competition.id).then((price) => {
-        setCompetitionPrices((prevPrices) => ({
-          ...prevPrices,
-          [competition.id]: price,
-        }))
-      })
-    })
-  }, [competitions])
+    if (competitions.length > 0) {
+      const prices = competitions.reduce((acc, competition) => {
+        const price = COMPETITION_STARTING_PRICES[competition.id] || 0;
+        acc[competition.id] = new Intl.NumberFormat("id-ID", {
+          style: "currency",
+          currency: "IDR",
+          minimumFractionDigits: 0,
+        }).format(price);
+        return acc;
+      }, {} as Record<string, string>);
+
+      setCompetitionPrices(prices);
+    }
+  }, [competitions]);
 
   const fetchRegistrations = async () => {
     try {
@@ -198,7 +206,6 @@ const GUIDEBOOK_LINKS: { [key: string]: string } = {
       if (registrationsResponse.ok) {
         const { registrations } = await registrationsResponse.json()
         setRegistrations(registrations)
-        console.log("📝 User registrations refreshed:", registrations)
       }
     } catch (error) {
       console.error("💥 Error fetching registrations:", error)
@@ -206,186 +213,179 @@ const GUIDEBOOK_LINKS: { [key: string]: string } = {
   }
 
   const fetchData = async () => {
-    try {
-      console.log("🔄 Fetching competition registration data...")
+  try {
+    // Jalankan semua fetch secara bersamaan
+    const [competitionsRes, batchesRes, registrationsRes] = await Promise.all([
+      fetch("/api/competitions"),
+      fetch("/api/batches/all"),
+      fetch("/api/users/registrations")
+    ]);
 
-      // Fetch competitions
-      const competitionsResponse = await fetch("/api/competitions")
-      if (competitionsResponse.ok) {
-        const { competitions } = await competitionsResponse.json()
-        // Mark team competitions using correct UUIDs
-        const competitionsWithTeamInfo = competitions.map((comp: Competition) => ({
-          ...comp,
-          is_team_competition: teamCompetitionUUIDs.includes(comp.id),
-        }))
-        setCompetitions(competitionsWithTeamInfo)
-        console.log("🏆 Competitions loaded:", competitionsWithTeamInfo.length)
-      }
-
-      // Fetch all batches with status
-      const batchesResponse = await fetch("/api/batches/all")
-      if (batchesResponse.ok) {
-        const { batches, currentBatchId, registrationClosed } = await batchesResponse.json()
-        setBatches(batches)
-        setCurrentBatchId(currentBatchId)
-        setRegistrationClosed(registrationClosed)
-        console.log("📅 Batches data:", { batches, currentBatchId, registrationClosed })
-      }
-
-      // Fetch user registrations with detailed status
-      await fetchRegistrations()
-    } catch (error) {
-      console.error("💥 Error fetching data:", error)
-    } finally {
-      setIsLoading(false)
+    // Proses response competitions
+    if (competitionsRes.ok) {
+      const { competitions } = await competitionsRes.json();
+      const competitionsWithTeamInfo = competitions.map((comp: Competition) => ({
+        ...comp,
+        is_team_competition: teamCompetitionUUIDs.includes(comp.id),
+      }));
+      setCompetitions(competitionsWithTeamInfo);
     }
-  }
+
+    // Proses response batches
+    if (batchesRes.ok) {
+      const { batches, currentBatchId, registrationClosed } = await batchesRes.json();
+      setBatches(batches);
+      setCurrentBatchId(currentBatchId);
+      setRegistrationClosed(registrationClosed);
+    }
+
+        // Proses response registrations
+    if (registrationsRes.ok) {
+        const { registrations } = await registrationsRes.json();
+        setRegistrations(registrations);
+    }
+
+    } catch (error) {
+      console.error("💥 Error fetching data:", error);
+      // Tambahkan feedback error ke user jika perlu
+      toast({
+          title: "Gagal Memuat Data",
+          description: "Tidak dapat mengambil data kompetisi. Coba muat ulang halaman.",
+          variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const getCompetitionPrice = async (competitionId: string): Promise<string> => {
-    // 1. Ambil harga dari objek hardcoded, atau 0 jika tidak ditemukan.
     const price = COMPETITION_STARTING_PRICES[competitionId] || 0;
-
-    // 2. Format harga ke dalam mata uang Rupiah.
     return new Intl.NumberFormat("id-ID", {
       style: "currency",
       currency: "IDR",
       minimumFractionDigits: 0,
     }).format(price);
-};
+  };
 
   const handleRegister = (competitionId: string) => {
-  // 1. Simpan ID kompetisi yang dipilih
-  setPendingCompetitionId(competitionId);
-  // 2. Buka modal konfirmasi
-  setIsModalOpen(true);
-};
-
-const handleCancelRegistration = () => {
-  // Reset loading state dan tutup modal
-  setIsLoading(false);
-  setIsModalOpen(false);
-  setPendingCompetitionId(null);
-};
-
-const handleConfirmRegistration = async () => {
-  // Pastikan ada kompetisi yang dipilih
-  if (!pendingCompetitionId) return;
-
-  // Set loading state ke true
-  setIsLoading(true);
-
-  try {
-    // --- Mulai Logika Pendaftaran Asli ---
-    if (registrationClosed) {
-      alert("Pendaftaran sedang ditutup sementara untuk rekapitulasi data.");
-      return;
-    }
-
-    const hasApprovedRegistration = registrations.some((reg) => reg.status === "approved");
-    const hasPendingWithPayment = registrations.some((reg) => reg.status === "pending" && reg.payment_proof_url);
-
-    if (hasApprovedRegistration || hasPendingWithPayment) {
-      alert(
-        "Anda sudah terdaftar di salah satu kompetisi atau sedang dalam proses verifikasi. Setiap peserta hanya dapat mendaftar satu kompetisi.",
-      );
-      handleCancelRegistration(); // Tutup modal setelah alert
-      return;
-    }
-
-    const isTeamCompetition = teamCompetitionUUIDs.includes(pendingCompetitionId);
-
-    const response = await fetch("/api/competitions/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        competitionId: pendingCompetitionId,
-        batchNumber: currentBatchId,
-        isTeamRegistration: isTeamCompetition,
-      }),
-    });
-
-    const data = await response.json();
-
-    if (response.ok) {
-      const newRegistration: Registration = {
-        id: data.registration.id,
-        competition_id: pendingCompetitionId,
-        status: "pending",
-        created_at: new Date().toISOString(),
-        expires_at: data.expiresAt,
-        is_team_registration: isTeamCompetition,
-      };
-      setRegistrations((prev) => [...prev, newRegistration]);
-      onRegisterCompetition(pendingCompetitionId, currentBatchId || 1);
-
-      if (isTeamCompetition) {
-        window.location.href = `/team-registration?competition=${pendingCompetitionId}&batch=${currentBatchId || 1}&registration=${data.registration.id}`;
-      } else {
-        window.location.href = `/payment?competition=${pendingCompetitionId}&batch=${currentBatchId || 1}&registration=${data.registration.id}`;
+    setPendingCompetitionId(competitionId);
+    setIsModalOpen(true);
+  };
+  
+  const handleCancelRegistration = () => {
+    setIsSubmitting(false);
+    setIsModalOpen(false);
+    setPendingCompetitionId(null);
+  };
+  
+  const handleConfirmRegistration = async () => {
+    if (!pendingCompetitionId) return;
+  
+    setIsSubmitting(true);
+    // *** PERUBAHAN KUNCI 1: Tampilkan overlay loading ***
+    setIsRedirecting(true);
+  
+    try {
+      if (registrationClosed) {
+        alert("Pendaftaran sedang ditutup sementara untuk rekapitulasi data.");
+        setIsRedirecting(false); // Sembunyikan loading jika gagal
+        return;
       }
-    } else {
-      alert("Gagal mendaftar: " + data.error);
+  
+      const hasApprovedRegistration = registrations.some((reg) => reg.status === "approved");
+      const hasPendingWithPayment = registrations.some((reg) => reg.status === "pending" && reg.payment_proof_url);
+  
+      if (hasApprovedRegistration || hasPendingWithPayment) {
+        alert(
+          "Anda sudah terdaftar di salah satu kompetisi atau sedang dalam proses verifikasi. Setiap peserta hanya dapat mendaftar satu kompetisi.",
+        );
+        handleCancelRegistration();
+        setIsRedirecting(false); // Sembunyikan loading jika gagal
+        return;
+      }
+  
+      const isTeamCompetition = teamCompetitionUUIDs.includes(pendingCompetitionId);
+  
+      const response = await fetch("/api/competitions/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          competitionId: pendingCompetitionId,
+          batchNumber: currentBatchId,
+          isTeamRegistration: isTeamCompetition,
+        }),
+      });
+  
+      const data = await response.json();
+  
+      if (response.ok) {
+        const newRegistration: Registration = {
+          id: data.registration.id,
+          competition_id: pendingCompetitionId,
+          status: "pending",
+          created_at: new Date().toISOString(),
+          expires_at: data.expiresAt,
+          is_team_registration: isTeamCompetition,
+        };
+        setRegistrations((prev) => [...prev, newRegistration]);
+        onRegisterCompetition(pendingCompetitionId, currentBatchId || 1);
+  
+        // Navigasi akan terjadi, biarkan overlay loading tetap terlihat
+        if (isTeamCompetition) {
+          router.push(`/team-registration?competition=${pendingCompetitionId}&batch=${currentBatchId || 1}&registration=${data.registration.id}`);
+        } else {
+          router.push(`/payment?competition=${pendingCompetitionId}&batch=${currentBatchId || 1}&registration=${data.registration.id}`);
+        }
+      } else {
+        alert("Gagal mendaftar: " + data.error);
+        setIsRedirecting(false); // Sembunyikan loading jika gagal
+      }
+    } catch (error) {
+      console.error("Registration error:", error);
+      alert("Terjadi kesalahan saat mendaftar");
+      setIsRedirecting(false); // Sembunyikan loading jika gagal
+    } finally {
+      setIsSubmitting(false);
+      // Jangan set isRedirecting ke false di sini agar loading tetap tampil saat navigasi
     }
-  } catch (error) {
-    console.error("Registration error:", error);
-    alert("Terjadi kesalahan saat mendaftar");
-  } finally {
-    // Set loading state ke false dan tutup modal
-    setIsLoading(false);
-    handleCancelRegistration();
-  }
-};
-
+  };
+  
+  // ... (sisa fungsi helper tidak berubah)
   const getRegistrationStatus = (competitionId: string) => {
     const registration = registrations.find((r) => r.competition_id === competitionId)
-
     if (!registration) return null
-
-    // If registration has payment proof, it should show as pending verification
     if (registration.payment_proof_url) {
-      return registration.status // This will be "pending" until admin approves
+      return registration.status
     }
-
-    // Check if registration is expired (only for registrations without payment proof)
     if (registration.status === "pending" && registration.expires_at && !registration.payment_proof_url) {
       const expirationTime = new Date(registration.expires_at)
       const now = new Date()
       if (expirationTime <= now) {
-        // Registration has expired, treat as if not registered
         return null
       }
     }
-
     return registration.status
   }
 
   const getRegistration = (competitionId: string) => {
     const registration = registrations.find((r) => r.competition_id === competitionId)
-
     if (!registration) return null
-
-    // If registration has payment proof, return it regardless of expiration
     if (registration.payment_proof_url) {
       return registration
     }
-
-    // Check if registration is expired (only for registrations without payment proof)
     if (registration.status === "pending" && registration.expires_at && !registration.payment_proof_url) {
       const expirationTime = new Date(registration.expires_at)
       const now = new Date()
       if (expirationTime <= now) {
-        // Registration has expired, treat as if not registered
         return null
       }
     }
-
     return registration
   }
 
   const isRegistered = (competitionId: string) => {
     return getRegistrationStatus(competitionId) !== null
   }
-
   const hasApprovedRegistration = () => {
     return registrations.some((reg) => reg.status === "approved")
   }
@@ -427,7 +427,6 @@ const handleConfirmRegistration = async () => {
         return null
     }
   }
-
   const formatDateTime = (dateString: string) => {
     return new Date(dateString).toLocaleString("id-ID", {
       year: "numeric",
@@ -440,69 +439,58 @@ const handleConfirmRegistration = async () => {
   }
 
   const getBatchStatusBadge = (batch: Batch, isCurrentBatch: boolean) => {
-    // Check if registration is globally closed
     if (registrationClosed) {
       return <Badge className="bg-red-500/20 text-red-300 border-red-500/30">Sedang Ditutup Sementara</Badge>
     }
-
-    // Check if this is the current active batch (set by admin)
     if (isCurrentBatch) {
       return <Badge className="bg-green-500/20 text-green-300 border-green-500/30">Dibuka</Badge>
     }
-
-    // For non-current batches, determine if they are past or future based on batch ID
-    // Lower ID = past batch, Higher ID = future batch
     if (currentBatchId && batch.id < currentBatchId) {
       return <Badge className="bg-gray-500/20 text-gray-300 border-gray-500/30">Telah ditutup</Badge>
     }
-
-    // Future batch (higher ID than current)
     return <Badge className="bg-yellow-500/20 text-yellow-300 border-yellow-500/30">Akan datang</Badge>
   }
-
   const getCurrentBatch = (): Batch | undefined => {
     return batches.find((batch: Batch) => batch.id === currentBatchId)
   }
 
   const handleTimerExpire = () => {
-    // Refresh data when timer expires to update registration status
     fetchData()
   }
 
-  // 2. Perbarui logika handleContinueRegistration
   const handleContinueRegistration = (competitionId: string, registration: Registration) => {
-  // Jika ini pendaftaran tim...
-  if (registration.is_team_registration) {
-    // ...dan data tim BELUM LENGKAP, arahkan ke form pengisian data tim.
-    if (!registration.team_data_complete) {
-      window.location.href = `/team-registration?competition=${competitionId}&batch=${currentBatchId || 1}&registration=${registration.id}`;
+    setIsRedirecting(true); // Tampilkan loading sebelum navigasi
+    if (registration.is_team_registration) {
+      if (!registration.team_data_complete) {
+        router.push(`/team-registration?competition=${competitionId}&batch=${currentBatchId || 1}&registration=${registration.id}`);
+      } else {
+        router.push(`/payment?competition=${competitionId}&batch=${currentBatchId || 1}&registration=${registration.id}`);
+      }
     } else {
-      // ...tapi jika SUDAH LENGKAP, langsung arahkan ke pembayaran.
-      window.location.href = `/payment?competition=${competitionId}&batch=${currentBatchId || 1}&registration=${registration.id}`;
+      router.push(`/payment?competition=${competitionId}&batch=${currentBatchId || 1}&registration=${registration.id}`);
     }
-  } else {
-    // Jika bukan pendaftaran tim, langsung ke pembayaran (alur individu).
-    window.location.href = `/payment?competition=${competitionId}&batch=${currentBatchId || 1}&registration=${registration.id}`;
-  }
-};
+  };
 
   if (isLoading) {
     return (
       <div className="space-y-6">
         <div className="animate-pulse">
-          <div className="h-8 bg-slate-700 rounded w-1/3 mb-2"></div>
-          <div className="h-4 bg-slate-700 rounded w-1/2"></div>
+          <div className="h-8 bg-slate-700 rounded w-1/2 mb-2"></div>
+          <div className="h-4 bg-slate-700 rounded w-2/3"></div>
         </div>
+        <div className="animate-pulse bg-slate-800 rounded-lg p-6 h-40"></div>
         <div className="animate-pulse bg-slate-800 rounded-lg p-6">
           <div className="h-6 bg-slate-700 rounded w-1/4 mb-4"></div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {[...Array(3)].map((_, i) => (
-              <div key={i} className="bg-slate-700 rounded-lg p-4">
-                <div className="h-4 bg-slate-600 rounded w-1/2 mb-2"></div>
-                <div className="h-3 bg-slate-600 rounded w-3/4"></div>
-              </div>
+              <div key={i} className="bg-slate-700 rounded-lg p-4 h-28"></div>
             ))}
           </div>
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="animate-pulse bg-slate-800 rounded-lg h-64"></div>
+          ))}
         </div>
       </div>
     )
@@ -511,14 +499,18 @@ const handleConfirmRegistration = async () => {
   const currentBatch = getCurrentBatch()
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-white mb-2">Pendaftaran Kompetisi</h1>
-        <p className="text-slate-400">Daftar kompetisi yang tersedia di PRF XIII</p>
-      </div>
+    // *** PERUBAHAN KUNCI 2: Bungkus semua dengan div relatif dan tambahkan overlay loading ***
+    <div className="relative">
+      {isRedirecting && <FullScreenLoading message="Mempersiapkan halaman berikutnya..." />}
 
-      {/* Important Notice - One Competition Only */}
-      <Card className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border-amber-500/30">
+      <div className={`space-y-6 ${isRedirecting ? 'opacity-50' : ''}`}>
+        {/* SEMUA KONTEN LAMA MASUK KE SINI */}
+        <div>
+          <h1 className="text-3xl font-bold text-white mb-2">Pendaftaran Kompetisi</h1>
+          <p className="text-slate-400">Daftar kompetisi yang tersedia di PRF XIII</p>
+        </div>
+
+        <Card className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border-amber-500/30">
         <CardHeader>
           <CardTitle className="text-white flex items-center gap-2">
             <AlertTriangle className="w-5 h-5 text-amber-400" />
@@ -554,8 +546,6 @@ const handleConfirmRegistration = async () => {
           </div>
         </CardContent>
       </Card>
-
-      {/* Registration Status Alert */}
       {registrationClosed && (
         <Card className="bg-gradient-to-r from-red-500/10 to-orange-500/10 border-red-500/30">
           <CardHeader>
@@ -573,7 +563,6 @@ const handleConfirmRegistration = async () => {
         </Card>
       )}
 
-      {/* Batch Information - Show All Batches */}
       {!registrationClosed && (
       <Card className="bg-gradient-to-r from-cyan-500/10 to-purple-500/10 border-cyan-500/30">
         <CardHeader>
@@ -632,75 +621,63 @@ const handleConfirmRegistration = async () => {
         </CardContent>
       </Card>
       )}
-
-      {/* Competition Cards */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <Card
-  key="manual-robotik"
-  className="bg-slate-900/50 border-slate-700 hover:border-slate-600 transition-colors" // Border & shadow ungu untuk pembeda
->
-  <CardHeader>
-    <div className="flex items-start justify-between">
-      <div className="flex items-center gap-3">
-        {/* Ikon untuk lomba tim (disesuaikan) */}
-        <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-indigo-600 rounded-lg flex items-center justify-center">
-          <Bot className="w-6 h-6 text-white" />
-        </div>
-        <div>
-          <CardTitle className="text-white text-lg">Lomba Robotik</CardTitle>
-          <div className="flex gap-2 mt-1">
-            {/* Badge/Kategori manual */}
-            <Badge variant="outline" className="text-xs border-slate-600 text-slate-300">
-              TK - SMA/Sederajat
-            </Badge>
-            <Badge className="text-xs bg-purple-500/20 text-purple-300 border-purple-500/30">
-              Tim/Individu
-            </Badge>
-          </div>
-        </div>
-      </div>
-    </div>
-  </CardHeader>
-  <CardContent className="space-y-4">
-    {/* Deskripsi manual */}
-    <CardDescription className="text-slate-300 leading-relaxed">
-      Adu kreativitas dan kemampuan rekayasa dalam merancang, membangun, dan memprogram dalam bidang robotika untuk menyelesaikan misi yang menantang. Silakan baca Guidebook pada <strong>"Info Pendaftaran"</strong>, pendaftaran dilakukan pada Google Form <strong>"Form Pendaftaran"</strong>
-    </CardDescription>
-    <CardDescription className="text-slate-300 leading-relaxed">
-      {/* Price Display */}
-                <div className="bg-slate-800/50 rounded-lg p-3">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-slate-400 text-sm">Masukkan <strong>KODE REFERRAL</strong>:</p>
-                      <p className="text-white font-semibold text-lg">RBTPRF13</p>
-                      <p className="text-slate-400 text-sm">pada Form Pendaftaran</p>
-                    </div>
-                  </div>
+        key="manual-robotik"
+        className="bg-slate-900/50 border-slate-700 hover:border-slate-600 transition-colors"
+      >
+        <CardHeader>
+          <div className="flex items-start justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-indigo-600 rounded-lg flex items-center justify-center">
+                <Bot className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <CardTitle className="text-white text-lg">Lomba Robotik</CardTitle>
+                <div className="flex gap-2 mt-1">
+                  <Badge variant="outline" className="text-xs border-slate-600 text-slate-300">
+                    TK - SMA/Sederajat
+                  </Badge>
+                  <Badge className="text-xs bg-purple-500/20 text-purple-300 border-purple-500/30">
+                    Tim/Individu
+                  </Badge>
                 </div>
-    </CardDescription>
+              </div>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <CardDescription className="text-slate-300 leading-relaxed">
+            Adu kreativitas dan kemampuan rekayasa dalam merancang, membangun, dan memprogram dalam bidang robotika untuk menyelesaikan misi yang menantang. Silakan baca Guidebook pada <strong>"Info Pendaftaran"</strong>, pendaftaran dilakukan pada Google Form <strong>"Form Pendaftaran"</strong>
+          </CardDescription>
+          <CardDescription className="text-slate-300 leading-relaxed">
+            <div className="bg-slate-800/50 rounded-lg p-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-slate-400 text-sm">Masukkan <strong>KODE REFERRAL</strong>:</p>
+                  <p className="text-white font-semibold text-lg">RBTPRF13</p>
+                  <p className="text-slate-400 text-sm">pada Form Pendaftaran</p>
+                </div>
+              </div>
+            </div>
+          </CardDescription>
 
-    {/* Tombol dengan link manual */}
-    {/* MODIFIED: Mengubah justify-between menjadi justify-start dan menambahkan gap-4 untuk memberi jarak antar tombol */}
-    <div className="flex items-center justify-start gap-4 pt-4 border-t border-slate-700">
-      {/* Tombol Info Pendaftaran */}
-      <a href="https://tinyurl.com/RobotikGBPRFXIII" target="_blank" rel="noopener noreferrer">
-        <Button className="bg-purple-600 hover:bg-purple-700 text-white">
-          <BookOpen className="w-4 h-4 mr-2" />
-          Info Pendaftaran
-        </Button>
-      </a>
-
-      {/* NEW: Tombol Form Pendaftaran */}
-      {/* Ganti "#" dengan link ke form pendaftaran yang sebenarnya */}
-      <a href="https://forms.gle/bnKV3fE5QJuqJNuZ9" target="_blank" rel="noopener noreferrer">
-        <Button variant="outline" className="border-purple-500/30 bg-purple-500/20 text-purple-300 hover:bg-purple-500/30">
-          <FilePenLine className="w-4 h-4 mr-2" /> {/* Ganti dengan ikon yang sesuai jika perlu */}
-          Form Pendaftaran
-        </Button>
-      </a>
-    </div>
-  </CardContent>
-</Card>
+          <div className="flex items-center justify-start gap-4 pt-4 border-t border-slate-700">
+            <a href="https://tinyurl.com/RobotikGBPRFXIII" target="_blank" rel="noopener noreferrer">
+              <Button className="bg-purple-600 hover:bg-purple-700 text-white">
+                <BookOpen className="w-4 h-4 mr-2" />
+                Info Pendaftaran
+              </Button>
+            </a>
+            <a href="https://forms.gle/bnKV3fE5QJuqJNuZ9" target="_blank" rel="noopener noreferrer">
+              <Button variant="outline" className="border-purple-500/30 bg-purple-500/20 text-purple-300 hover:bg-purple-500/30">
+                <FilePenLine className="w-4 h-4 mr-2" />
+                Form Pendaftaran
+              </Button>
+            </a>
+          </div>
+        </CardContent>
+      </Card>
         
         {competitions.map((competition: Competition) => {
           const price = competitionPrices[competition.id] || "Memuat..."
@@ -718,7 +695,6 @@ const handleConfirmRegistration = async () => {
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
                     <div className={`w-12 h-12 bg-gradient-to-r ${competition.color || "from-blue-500 to-purple-600"} rounded-lg flex items-center justify-center`}>
-                      {/* Mengambil ikon dari map, atau fallback ke Trophy jika tidak ditemukan */}
                       {ICON_MAP[competition.icon] || <Trophy className="w-6 h-6 text-white" />}
                     </div>
                     <div>
@@ -745,7 +721,6 @@ const handleConfirmRegistration = async () => {
               <CardContent className="space-y-4">
                 <CardDescription className="text-slate-300 leading-relaxed">{competition.description}</CardDescription>
 
-                {/* Countdown Timer for Pending Registrations */}
                 {registration &&
                   registration.status === "pending" &&
                   registration.expires_at &&
@@ -760,7 +735,6 @@ const handleConfirmRegistration = async () => {
                     </div>
                   )}
 
-                {/* Price Display */}
                 <div className="bg-slate-800/50 rounded-lg p-3">
                   <div className="flex items-center justify-between">
                     <div>
@@ -775,7 +749,6 @@ const handleConfirmRegistration = async () => {
                 </div>
 
                 <div className="flex items-center justify-between pt-4 border-t border-slate-700">
-                  {/* Tombol Batal akan muncul di sini jika kondisi terpenuhi */}
                   {registrationStatus === 'pending' && registration && !registration.payment_proof_url ? (
                       <Button
                           size="sm"
@@ -810,14 +783,11 @@ const handleConfirmRegistration = async () => {
                   )}
                   </div>
                   )}
-                  {/* Tombol Daftar/Pembayaran */}
                   <Button
                     onClick={() => {
                       if (registrationStatus === "pending" && registration && !registration.payment_proof_url) {
-                        // Continue existing registration
                         handleContinueRegistration(competition.id, registration)
                       } else if (!isRegistered(competition.id) && canRegisterNewCompetition()) {
-                        // Start new registration
                         handleRegister(competition.id)
                       }
                     }}
@@ -941,7 +911,7 @@ const handleConfirmRegistration = async () => {
         </Card>
       )}
       <Card className="bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border-blue-500/30">
-          <CardContent className="p-4"> {/* Mengatur padding menjadi lebih kecil */}
+          <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <Phone className="w-5 h-5 text-blue-400 flex-shrink-0" />
               <p className="text-slate-300 text-sm">
@@ -950,9 +920,7 @@ const handleConfirmRegistration = async () => {
             </div>
           </CardContent>
       </Card>
-      {/* Modal untuk Lomba Individu */}
       {isModalOpen && pendingCompetitionId && !competitions.find(c => c.id === pendingCompetitionId)?.is_team_competition && (() => {
-        // ▼▼▼ TAMBAHKAN LOGIKA INI ▼▼▼
         const isEducationLevelEligible = 
           userData?.education_level && 
           ['smp', 'sma', 'universitas'].includes(userData.education_level);
@@ -994,7 +962,6 @@ const handleConfirmRegistration = async () => {
                   Pastikan jenjang pendidikan Anda sudah tepat dan sudah memilih kompetisi yang tepat.
                 </p>
               </div>
-              {/* ▼▼▼ TAMBAHKAN PESAN PERINGATAN INI ▼▼▼ */}
               {!isEducationLevelEligible && (
                 <div className="mt-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
                   <p className="text-red-300 text-sm flex items-center gap-2">
@@ -1009,16 +976,16 @@ const handleConfirmRegistration = async () => {
                 variant="outline"
                 className="border-slate-600 text-slate-300 hover:bg-slate-800"
                 onClick={handleCancelRegistration}
-                disabled={isLoading}  // Tambahkan disabled saat loading
+                disabled={isSubmitting}
               >
                 Batal
               </Button>
               <Button
               className="bg-blue-600 hover:bg-blue-700 text-white"
               onClick={handleConfirmRegistration}
-              disabled={!isEducationLevelEligible || isLoading}
+              disabled={!isEducationLevelEligible || isSubmitting}
             >
-              {isLoading ? (
+              {isSubmitting ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                   Memproses...
@@ -1045,10 +1012,9 @@ const handleConfirmRegistration = async () => {
       description="Apakah Anda yakin ingin membatalkan pendaftaran untuk kompetisi ini? Tindakan ini tidak dapat diurungkan."
       confirmText="Ya, Batalkan"
       cancelText="Tidak"
-      isLoading={isLoading}
+      isLoading={isSubmitting}
       />
 
-      {/* Modal untuk Lomba Tim */}
       {isModalOpen && pendingCompetitionId && competitions.find(c => c.id === pendingCompetitionId)?.is_team_competition && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
           <Card className="bg-slate-900 border-slate-700 w-full max-w-md animate-in fade-in-0 zoom-in-95">
@@ -1099,16 +1065,16 @@ const handleConfirmRegistration = async () => {
                 variant="outline"
                 className="border-slate-600 text-slate-300 hover:bg-slate-800"
                 onClick={handleCancelRegistration}
-                disabled={isLoading}  // Tambahkan disabled saat loading
+                disabled={isSubmitting}
               >
                 Batal
               </Button>
               <Button
                 className="bg-purple-600 hover:bg-purple-700 text-white"
                 onClick={handleConfirmRegistration}
-                disabled={isLoading}
+                disabled={isSubmitting}
               >
-                {isLoading ? (
+                {isSubmitting ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                     Memproses...
@@ -1124,6 +1090,7 @@ const handleConfirmRegistration = async () => {
           </Card>
         </div>
       )}
+      </div>
     </div>
   )
 }
