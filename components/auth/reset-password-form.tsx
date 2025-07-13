@@ -2,13 +2,37 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useToast } from '@/hooks/use-toast'; // Pastikan menggunakan hook yang benar
+import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Eye, EyeOff, Lock, CheckCircle } from 'lucide-react';
+import { Eye, EyeOff, Lock, CheckCircle, Check, AlertTriangle } from 'lucide-react';
+
+// --- Komponen Baru untuk Daftar Persyaratan ---
+const PasswordRequirement = ({ isValid, text }: { isValid: boolean; text: string }) => (
+  <div
+    className={`flex items-center gap-3 text-sm transition-all duration-300 ${
+      isValid ? 'text-green-400' : 'text-slate-400'
+    }`}
+  >
+    <div
+      className={`w-5 h-5 flex-shrink-0 flex items-center justify-center rounded-full transition-all duration-300 ${
+        isValid ? 'bg-green-500/20' : 'bg-slate-700/50'
+      }`}
+    >
+      {isValid && <Check className="w-3.5 h-3.5" />}
+    </div>
+    <span>{text}</span>
+  </div>
+);
+
+// --- PERBAIKAN 1: Tentukan tipe data untuk state validasi ---
+// Ini memberitahu TypeScript bahwa objek akan memiliki kunci string dan nilai boolean.
+interface ValidationStatus {
+  [key: string]: boolean;
+}
 
 export function ResetPasswordForm() {
   const router = useRouter();
@@ -24,6 +48,27 @@ export function ResetPasswordForm() {
   const [error, setError] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
 
+  const requirements = useMemo(() => [
+    { id: 'minLength', text: 'Minimal 8 karakter', a: (p: string) => p.length >= 8 },
+    { id: 'hasUppercase', text: 'Mengandung huruf kapital (A-Z)', a: (p: string) => /[A-Z]/.test(p) },
+    { id: 'hasLowercase', text: 'Mengandung huruf kecil (a-z)', a: (p: string) => /[a-z]/.test(p) },
+    { id: 'hasNumber', text: 'Mengandung angka (0-9)', a: (p: string) => /[0-9]/.test(p) },
+    { id: 'hasSpecialChar', text: 'Mengandung karakter spesial (!@#$...)', a: (p: string) => /[!@#$%^&*(),.?":{}|<>]/.test(p) },
+  ], []);
+
+  // --- PERBAIKAN 2: Terapkan tipe data pada hook useState ---
+  const [validationStatus, setValidationStatus] = useState<ValidationStatus>(
+    requirements.reduce((acc, req) => ({ ...acc, [req.id]: false }), {})
+  );
+
+  useEffect(() => {
+    const newStatus = requirements.reduce((acc, req) => ({
+      ...acc,
+      [req.id]: req.a(password),
+    }), {});
+    setValidationStatus(newStatus);
+  }, [password, requirements]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -35,34 +80,15 @@ export function ResetPasswordForm() {
       return;
     }
 
-    if (password !== confirmPassword) {
-      setError('Password dan konfirmasi password tidak cocok.');
+    const allRequirementsMet = Object.values(validationStatus).every(Boolean);
+    if (!allRequirementsMet) {
+      setError('Pastikan semua persyaratan password terpenuhi.');
       setIsLoading(false);
       return;
     }
 
-    if (password.length < 8) {
-      setError('Password minimal harus 8 karakter.');
-      setIsLoading(false);
-      return;
-    }
-    if (!/[A-Z]/.test(password)) {
-      setError('Password harus mengandung setidaknya satu huruf kapital.');
-      setIsLoading(false);
-      return;
-    }
-    if (!/[a-z]/.test(password)) {
-      setError('Password harus mengandung setidaknya satu huruf kecil.');
-      setIsLoading(false);
-      return;
-    }
-    if (!/[0-9]/.test(password)) {
-      setError('Password harus mengandung setidaknya satu angka.');
-      setIsLoading(false);
-      return;
-    }
-    if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
-      setError('Password harus mengandung setidaknya satu karakter spesial (!, @, $, %, ^, &, *, +, #).');
+    if (password !== confirmPassword) {
+      setError('Password dan konfirmasi password tidak cocok.');
       setIsLoading(false);
       return;
     }
@@ -70,12 +96,9 @@ export function ResetPasswordForm() {
     try {
       const response = await fetch('/api/auth/reset-password', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token, newPassword: password }),
       });
-
       const data = await response.json();
 
       if (response.ok) {
@@ -85,9 +108,7 @@ export function ResetPasswordForm() {
           description: 'Anda sekarang bisa login dengan password baru Anda.',
           variant: 'default',
         });
-        setTimeout(() => {
-          router.push('/auth');
-        }, 3000);
+        setTimeout(() => router.push('/auth'), 3000);
       } else {
         setError(data.error || 'Gagal mengubah password.');
         toast({
@@ -111,16 +132,16 @@ export function ResetPasswordForm() {
 
   if (isSuccess) {
     return (
-      <div className="w-full max-w-md mx-auto text-center">
-        <div className="mb-8">
-          <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+      <div className="w-full max-w-md mx-auto text-center p-4">
+        <div className="animate-fade-in-up">
+          <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse-once">
             <CheckCircle className="w-8 h-8 text-green-400" />
           </div>
           <h1 className="text-3xl md:text-4xl font-black text-transparent bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 bg-clip-text mb-2">
             Password Berhasil Diubah
           </h1>
           <p className="text-slate-400">
-            Anda akan diarahkan kembali ke halaman login dalam beberapa saat.
+            Anda akan diarahkan kembali ke halaman login dalam 3 detik.
           </p>
         </div>
       </div>
@@ -133,10 +154,11 @@ export function ResetPasswordForm() {
         <h1 className="text-3xl md:text-4xl font-black text-transparent bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 bg-clip-text mb-2">
           Reset Password
         </h1>
-        <p className="text-slate-400">Masukkan password baru Anda</p>
+        <p className="text-slate-400">Buat password baru yang kuat dan aman.</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Input Password Baru */}
         <div className="space-y-2">
           <Label htmlFor="password" className="text-white font-medium">
             Password Baru
@@ -157,15 +179,24 @@ export function ResetPasswordForm() {
               onClick={() => setShowPassword(!showPassword)}
               className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-white transition-colors"
             >
-              {showPassword ? (
-                <EyeOff className="w-5 h-5" />
-              ) : (
-                <Eye className="w-5 h-5" />
-              )}
+              {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
             </button>
           </div>
         </div>
 
+        {/* Daftar Persyaratan Real-time */}
+        <div className="bg-slate-900/40 border border-slate-800 rounded-lg p-4 space-y-3">
+          <p className="text-sm font-medium text-white mb-2">Password harus memenuhi:</p>
+          {requirements.map(req => (
+            <PasswordRequirement
+              key={req.id}
+              isValid={validationStatus[req.id]} // Baris ini sekarang aman dari error
+              text={req.text}
+            />
+          ))}
+        </div>
+
+        {/* Input Konfirmasi Password */}
         <div className="space-y-2">
           <Label htmlFor="confirm-password" className="text-white font-medium">
             Konfirmasi Password Baru
@@ -186,20 +217,23 @@ export function ResetPasswordForm() {
               onClick={() => setShowConfirmPassword(!showConfirmPassword)}
               className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-white transition-colors"
             >
-              {showConfirmPassword ? (
-                <EyeOff className="w-5 h-5" />
-              ) : (
-                <Eye className="w-5 h-5" />
-              )}
+              {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
             </button>
           </div>
-          {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
         </div>
+
+        {/* Tampilan Error */}
+        {error && (
+          <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm rounded-lg p-3 flex items-center gap-3">
+            <AlertTriangle className="w-5 h-5 flex-shrink-0" />
+            <span>{error}</span>
+          </div>
+        )}
 
         <Button
           type="submit"
           disabled={isLoading}
-          className="w-full bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 text-white font-medium py-3 rounded-lg transition-all duration-300 transform hover:scale-105"
+          className="w-full bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 text-white font-bold py-3 rounded-lg transition-all duration-300 transform hover:scale-105 disabled:scale-100 disabled:opacity-60"
         >
           {isLoading ? (
             <div className="flex items-center justify-center gap-2">

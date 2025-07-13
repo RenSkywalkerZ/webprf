@@ -2,8 +2,9 @@
 import { useState } from "react"
 import { User, Trophy, FileText, LogOut, Menu, X, Shield, BarChart3, Users, Home, Settings } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Lock } from "lucide-react" // Impor ikon gembok
+import { Lock } from "lucide-react"
 import { signOut } from "next-auth/react"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip" // Impor komponen Tooltip
 
 interface DashboardSidebarProps {
   activeSection: string
@@ -14,7 +15,7 @@ interface DashboardSidebarProps {
 
 export function DashboardSidebar({ activeSection, onSectionChange, userData, profileCompletion }: DashboardSidebarProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-  
+
   // Admin menu items
   const adminMenuItems = [
     {
@@ -25,9 +26,9 @@ export function DashboardSidebar({ activeSection, onSectionChange, userData, pro
     },
     {
       id: "user-management",
-      label: "Manajemen Pengguna",
+      label: "Manajemen Pendaftaran",
       icon: Users,
-      description: "Kelola peserta dan pendaftaran",
+      description: "Kelola pendaftaran",
     },
     {
       id: "batch-pricing-management",
@@ -107,21 +108,16 @@ export function DashboardSidebar({ activeSection, onSectionChange, userData, pro
         </div>
       </div>
 
-      <nav className="flex-1 p-4">
-        <div className="space-y-2">
-          {menuItems.map((item) => {
-            // --- PERUBAHAN 3: Tentukan apakah item menu harus dikunci ---
-            const isLocked =
-              userData?.role !== "admin" &&
-              profileCompletion < 100 &&
-              (item.id === "registration" || item.id === "details");
+      <TooltipProvider delayDuration={100}>
+        <nav className="flex-1 p-4">
+          <div className="space-y-2">
+            {menuItems.map((item) => {
+              const isLocked =
+                userData?.role !== "admin" &&
+                profileCompletion < 100 &&
+                (item.id === "registration" || item.id === "details")
 
-            const lockedTooltip = isLocked
-              ? "Lengkapi profil Anda hingga 100% untuk membuka menu ini"
-              : "";
-
-            return (
-              <div key={item.id} title={lockedTooltip}>
+              const buttonItem = (
                 <button
                   onClick={() => {
                     if (!isLocked) {
@@ -151,16 +147,37 @@ export function DashboardSidebar({ activeSection, onSectionChange, userData, pro
                     <div className="font-medium">{item.label}</div>
                     <div className="text-xs text-slate-400 mt-1">{item.description}</div>
                   </div>
-                  {/* --- PERUBAHAN 4: Tampilkan ikon gembok --- */}
                   {isLocked && (
                     <Lock className="w-4 h-4 text-slate-400 flex-shrink-0" />
                   )}
                 </button>
-              </div>
-            );
-          })}
-        </div>
-      </nav>
+              )
+
+              if (isLocked) {
+                return (
+                  <Tooltip key={item.id}>
+                    <TooltipTrigger asChild>
+                      {/* Wrap dengan div karena button dalam keadaan disabled */}
+                      <div className="w-full cursor-not-allowed">
+                        {buttonItem}
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent side="right" align="center">
+                      <p>Lengkapi profil Anda hingga 100% untuk membuka menu ini</p>
+                    </TooltipContent>
+                  </Tooltip>
+                )
+              }
+
+              return (
+                <div key={item.id}>
+                  {buttonItem}
+                </div>
+              )
+            })}
+          </div>
+        </nav>
+      </TooltipProvider>
 
       {/* Logout Button */}
       <div className="p-4 border-t border-slate-700">

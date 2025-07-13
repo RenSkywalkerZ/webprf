@@ -330,7 +330,7 @@ export function PaymentPage({ registrationId }: PaymentPageProps) {
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-slate-400">Bank:</span>
-                    <span className="text-white font-medium">blu by BCA</span>
+                    <span className="text-white font-medium">blu by BCA Digital</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-slate-400">No. Rekening:</span>

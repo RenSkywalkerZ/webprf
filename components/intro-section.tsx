@@ -1,5 +1,3 @@
-"use client"
-
 export function IntroSection() {
   return (
     <section id="intro" className="py-12 md:py-20 bg-black relative overflow-hidden">
