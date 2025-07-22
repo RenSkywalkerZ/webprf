@@ -131,13 +131,13 @@ export function CompetitionDetails({ userData }: CompetitionDetailsProps) {
   // Get WhatsApp link based on competition title
   const getWhatsappLink = (competitionTitle: string) => {
     const whatsappLinks: { [key: string]: string } = {
-      "Physics Competition": "",
-      "Depict Physics": "",
-      "Lomba Praktikum": "",
-      "Science Project": "",
-      "Scientific Writing": "",
-      "Cerdas Cermat": "",
-      "Roket Air": "",
+      "Physics Competition": "https://chat.whatsapp.com/Bct2vK3MeI3A9veXApss82?mode=ac_t",
+      "Depict Physics": "https://chat.whatsapp.com/Bct2vK3MeI3A9veXApss82?mode=ac_t",
+      "Lomba Praktikum": "https://chat.whatsapp.com/Bct2vK3MeI3A9veXApss82?mode=ac_t",
+      "Science Project": "https://chat.whatsapp.com/Bct2vK3MeI3A9veXApss82?mode=ac_t",
+      "Scientific Writing": "https://chat.whatsapp.com/Bct2vK3MeI3A9veXApss82?mode=ac_t",
+      "Cerdas Cermat": "https://chat.whatsapp.com/Bct2vK3MeI3A9veXApss82?mode=ac_t",
+      "Roket Air": "https://chat.whatsapp.com/Bct2vK3MeI3A9veXApss82?mode=ac_t",
     };
     return whatsappLinks[competitionTitle] || "#"; // Returns a fallback link '#' if not found
   };

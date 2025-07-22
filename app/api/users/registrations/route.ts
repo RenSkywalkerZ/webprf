@@ -30,27 +30,27 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    // First, clean up expired registrations without payment proof
-    const now = new Date().toISOString()
+    // // First, clean up expired registrations without payment proof
+    // const now = new Date().toISOString()
 
-    const { data: expiredRegistrations } = await supabaseAdmin
-      .from("registrations")
-      .select("id, expires_at, payment_proof_url")
-      .eq("user_id", session.user.id)
-      .eq("status", "pending")
-      .lt("expires_at", now)
+    // const { data: expiredRegistrations } = await supabaseAdmin
+    //   .from("registrations")
+    //   .select("id, expires_at, payment_proof_url")
+    //   .eq("user_id", session.user.id)
+    //   .eq("status", "pending")
+    //   .lt("expires_at", now)
 
-    if (expiredRegistrations && expiredRegistrations.length > 0) {
-      const expiredIds = expiredRegistrations
-        .filter((reg) => !reg.payment_proof_url) // Only delete if no payment proof
-        .map((reg) => reg.id)
+    // if (expiredRegistrations && expiredRegistrations.length > 0) {
+    //   const expiredIds = expiredRegistrations
+    //     .filter((reg) => !reg.payment_proof_url) // Only delete if no payment proof
+    //     .map((reg) => reg.id)
 
-      if (expiredIds.length > 0) {
-        await supabaseAdmin.from("registrations").delete().in("id", expiredIds)
+    //   if (expiredIds.length > 0) {
+    //     await supabaseAdmin.from("registrations").delete().in("id", expiredIds)
 
-        console.log(`Cleaned up ${expiredIds.length} expired registrations for user ${session.user.id}`)
-      }
-    }
+    //     console.log(`Cleaned up ${expiredIds.length} expired registrations for user ${session.user.id}`)
+    //   }
+    // }
 
     // Now fetch current valid registrations
     const { data: registrations, error } = await supabaseAdmin
