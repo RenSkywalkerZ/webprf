@@ -13,5 +13,5 @@ jobs:
       - name: Trigger Cleanup Endpoint
         run: |
           curl --fail --location -X POST \
-            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H 'Authorization: Bearer fpy3Wjpxf1h7319aaj2fG6rsqxkMwAni' \
             "https://prfxiii.com/api/cron/cleanup-registrations"
