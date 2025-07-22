@@ -332,27 +332,25 @@ const ParticipantCard = React.memo(
                 </SelectItem>
               </SelectContent>
             </Select>
+            {participant.payment_proof_url && (
+            <Button
+              size="sm"
+              onClick={() => onViewProof(participant.payment_proof_url)}
+              className="bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg transition duration-200"
+            >
+              <Eye className="w-4 h-4 mr-2" />
+              Lihat Bukti Bayar dan Berkas
+            </Button>
+            )}
           </div>
         </div>
 
         {participant.is_team_registration && (
           <>
             <Separator className="bg-slate-700 my-3" />
+            <div className="flex items-center justify-between">
               <h4 className="text-white font-semibold">Detail Tim ({participant.team_members?.length || 0} Anggota)</h4>
               <div className="flex items-center gap-2">
-                {/* TOMBOL BARU DITAMBAHKAN DI SINI */}
-                {participant.payment_proof_url && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => onViewProof(participant.payment_proof_url)}
-                    className="border-slate-600 text-white hover:bg-slate-700"
-                  >
-                    <Eye className="w-4 h-4 mr-2" />
-                    Lihat Bukti Bayar
-                  </Button>
-                )}
-
                 <Button
                   variant="outline"
                   size="sm"
@@ -375,6 +373,7 @@ const ParticipantCard = React.memo(
                   {isTeamExpanded ? "Sembunyikan Anggota" : "Lihat Anggota"}
                 </Button>
               </div>
+            </div>
 
             {isRegistrantExpanded && (
               <div className="bg-slate-800/30 rounded-lg p-4 border border-slate-700 my-3 space-y-2 text-sm">

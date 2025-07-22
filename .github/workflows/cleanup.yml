@@ -1,9 +1,11 @@
 name: Cleanup Expired Registrations
 
 on:
+  # Jalankan workflow ini sesuai jadwal
   schedule:
     # Ini adalah jadwal cron: "setiap 15 menit"
     - cron: '*/15 * * * *'
+  # Tambahkan ini agar Anda bisa menjalankannya secara manual dari tab Actions
   workflow_dispatch:
 
 jobs:
@@ -12,6 +14,6 @@ jobs:
     steps:
       - name: Trigger Cleanup Endpoint
         run: |
-          curl --fail --location -X POST \
+          curl -X POST \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            "https://prfxiii.com/api/cron/cleanup-registrations"
+            "https://www.prfxiii.com/api/cron/cleanup-registrations"
