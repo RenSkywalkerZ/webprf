@@ -4,7 +4,7 @@ on:
   # Jalankan workflow ini sesuai jadwal
   schedule:
     # Ini adalah jadwal cron: "setiap 15 menit"
-    - cron: '*/15 * * * *'
+    - cron: '0 * * * *'
   # Tambahkan ini agar Anda bisa menjalankannya secara manual dari tab Actions
   workflow_dispatch:
 
