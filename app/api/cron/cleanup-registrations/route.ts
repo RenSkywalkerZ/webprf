@@ -5,6 +5,10 @@ export async function POST(request: Request) {
   console.log(`[CRON JOB TEST] - Cron job dipicu pada: ${new Date().toISOString()}`);
   // Amankan endpoint ini dengan secret key
   const authorization = request.headers.get('Authorization');
+  console.log("--- START CRON JOB DEBUG ---");
+  console.log("Received Authorization Header:", authorization);
+  console.log("Vercel Environment Secret (first 5 chars):", process.env.CRON_SECRET?.substring(0, 5));
+  console.log("---  END CRON JOB DEBUG  ---");
   if (authorization !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
