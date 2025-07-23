@@ -7,7 +7,7 @@ import { supabaseAdmin } from "@/lib/supabase";
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -15,7 +15,9 @@ export async function DELETE(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const registrationId = params.id;
+    // Await the params before accessing its properties
+    const { id } = await params;
+    const registrationId = id;
 
     // Ambil data registrasi untuk verifikasi kepemilikan
     const { data: registration, error: fetchError } = await supabaseAdmin

@@ -32,7 +32,6 @@ export default function Payment() {
       competitionId={competitionId}
       batchId={batchId}
       registrationId={registrationId}
-      isTeamRegistration={isTeamRegistration}
     />
   )
 }

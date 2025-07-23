@@ -308,7 +308,7 @@ const ParticipantCard = React.memo(
                   {participant.competitions?.title || "Nama Lomba Tidak Ada"}
                 </Badge>
                 <span className="text-slate-400 text-sm">
-                  Batch {participant.batch_number} • Terdaftar pada{" "}
+                  Batch {participant.batch_number} • Mendaftar pada{" "}
                   {new Date(participant.registration_date).toLocaleDateString("id-ID")}
                 </span>
               </div>

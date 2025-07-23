@@ -39,7 +39,7 @@ const mapGradeToEducationLevel = (grade: string): string | null => {
 
 export async function GET(
   request: Request,
-  { params }: { params: { registrationId: string } }
+  { params }: { params: Promise<{ registrationId: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -47,7 +47,8 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { registrationId } = params;
+    // Await the params before destructuring
+    const { registrationId } = await params;
     if (!registrationId) {
       return NextResponse.json({ error: "Registration ID is required" }, { status: 400 });
     }
