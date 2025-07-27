@@ -17,7 +17,7 @@ interface Competition {
   category: string
   color?: string
   icon: string
-  is_team_competition?: boolean 
+  is_team_competition?: boolean
 }
 
 interface Batch {
@@ -662,15 +662,15 @@ export function CompetitionRegistration({ userData, onRegisterCompetition }: Com
             </div>
           </CardDescription>
 
-          <div className="flex items-center justify-start gap-4 pt-4 border-t border-slate-700">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-start gap-3 pt-4 border-t border-slate-700">
             <a href="https://tinyurl.com/RobotikGBPRFXIII" target="_blank" rel="noopener noreferrer">
-              <Button className="bg-purple-600 hover:bg-purple-700 text-white">
+              <Button className="bg-purple-600 hover:bg-purple-700 text-white w-full sm:w-auto">
                 <BookOpen className="w-4 h-4 mr-2" />
                 Info Pendaftaran
               </Button>
             </a>
             <a href="https://forms.gle/bnKV3fE5QJuqJNuZ9" target="_blank" rel="noopener noreferrer">
-              <Button variant="outline" className="border-purple-500/30 bg-purple-500/20 text-purple-300 hover:bg-purple-500/30">
+              <Button variant="outline" className="border-purple-500/30 bg-purple-500/20 text-purple-300 hover:bg-purple-500/30 w-full sm:w-auto">
                 <FilePenLine className="w-4 h-4 mr-2" />
                 Form Pendaftaran
               </Button>
@@ -736,24 +736,25 @@ export function CompetitionRegistration({ userData, onRegisterCompetition }: Com
                   )}
 
                 <div className="bg-slate-800/50 rounded-lg p-3">
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-2">
                     <div>
                       <p className="text-slate-400 text-sm">Biaya pendaftaran <strong>MULAI</strong> dari:</p>
                       <p className="text-white font-semibold text-lg">{price}</p>
                     </div>
-                    <div className="text-right">
+                    <div className="text-left sm:text-right">
                       <p className="text-slate-400 text-xs">{isTeamCompetition ? "Per tim" : "Per peserta"}</p>
                       <p className="text-slate-300 text-sm">Sekali bayar</p>
                     </div>
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between pt-4 border-t border-slate-700">
+                <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-3 pt-4 border-t border-slate-700">
                   {registrationStatus === 'pending' && registration && !registration.payment_proof_url ? (
                       <Button
                           size="sm"
                           variant="destructive"
                           onClick={() => openCancelDialog(registration.id)}
+                          className="w-full sm:w-auto"
                       >
                           Batal
                       </Button>
@@ -798,7 +799,7 @@ export function CompetitionRegistration({ userData, onRegisterCompetition }: Com
                       !currentBatchId ||
                       registrationClosed
                     }
-                    className={`
+                    className={`w-full sm:w-auto
                       ${
                         registrationStatus === "approved"
                           ? "bg-green-600 hover:bg-green-700"

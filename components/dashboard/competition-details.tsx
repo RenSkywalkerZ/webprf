@@ -598,7 +598,7 @@ export function CompetitionDetails({ userData }: CompetitionDetailsProps) {
                           <span className="text-yellow-300 font-semibold">Menunggu Verifikasi</span>
                         </div>
                         <p className="text-slate-300 text-sm">
-                          Anda belum upload bukti pembayaran <strong>ATAU</strong> bukti pembayaran Anda sedang diverifikasi oleh admin. Mohon tunggu.
+                          Anda belum upload bukti pembayaran <strong>ATAU</strong> bukti pembayaran Anda sedang diverifikasi oleh admin.
                         </p>
                       </div>
                     )}

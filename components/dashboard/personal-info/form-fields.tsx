@@ -22,7 +22,7 @@ const RequiredLabel = ({ children }: { children: React.ReactNode }) => (
 
 const OptionalLabel = ({ children }: { children: React.ReactNode }) => (
   <span className="text-white font-medium">
-    {children} <span className="text-slate-400 text-sm">(optional)</span>
+    {children} <span className="text-slate-400 text-sm">(opsional)</span>
   </span>
 )
 
@@ -208,7 +208,7 @@ export function AddressFields({ formData, validationErrors, onInputChange }: For
         <Label htmlFor="street">
           <RequiredLabel>Alamat Jalan</RequiredLabel>
         </Label>
-        <FieldDescription>Isi dengan nama jalan, nomor rumah, dan detail alamat</FieldDescription>
+        <FieldDescription>Isi dengan nama jalan dan nomor rumah</FieldDescription>
         <div className="relative">
           <MapPin className="absolute left-3 top-3 text-slate-400 w-4 h-4" />
           <textarea
@@ -219,7 +219,7 @@ export function AddressFields({ formData, validationErrors, onInputChange }: For
               validationErrors.street ? "border-red-500" : ""
             }`}
             rows={2}
-            placeholder="Contoh: Jl. Merdeka No. 123, RT 01/RW 02"
+            placeholder="Contoh: Jl. Merdeka No. 123"
           />
         </div>
         {validationErrors.street && <span className="text-xs text-red-400">{validationErrors.street}</span>}
@@ -328,10 +328,10 @@ export function AddressFields({ formData, validationErrors, onInputChange }: For
 
 export function EducationFields({ formData, validationErrors, onInputChange, onFileChange }: FormFieldsProps) {
   const educationLevels = [
-    { value: "tk", label: "TK/PAUD" },
-    { value: "sd", label: "SD/MI" },
-    { value: "smp", label: "SMP/MTs" },
-    { value: "sma", label: "SMA/MA/SMK" },
+    { value: "tk", label: "TK/Sederajat" },
+    { value: "sd", label: "SD/Sederajat" },
+    { value: "smp", label: "SMP/Sederajat" },
+    { value: "sma", label: "SMA/Sederajat" },
     { value: "universitas", label: "Universitas/Perguruan Tinggi" },
     { value: "umum", label: "Guru/Wali/Masyarakat Umum" },
   ]
@@ -344,6 +344,44 @@ export function EducationFields({ formData, validationErrors, onInputChange, onF
     { value: "kartu_pelajar", label: "Kartu Pelajar" },
     { value: "ktm", label: "KTM (Kartu Tanda Mahasiswa)" },
   ]
+
+  const getSchoolPlaceholder = () => {
+    switch (formData.educationLevel) {
+      case "tk":
+        return "Contoh: TK Tunas Bangsa"
+      case "sd":
+        return "Contoh: SD Negeri 1 Jakarta"
+      case "smp":
+        return "Contoh: SMP Negeri 2 Bekasi"
+      case "sma":
+        return "Contoh: SMA Negeri 3 Bandung"
+      case "universitas":
+        return "Contoh: Universitas Indonesia"
+      case "umum":
+        return "Contoh: Instansi/Lembaga (jika ada)"
+      default:
+        return "Asal Sekolah/Universitas"
+    }
+  }
+
+  const getGradePlaceholder = () => {
+    switch (formData.educationLevel) {
+      case "tk":
+        return "Contoh: TK A"
+      case "sd":
+        return "Contoh: Kelas 5"
+      case "smp":
+        return "Contoh: Kelas 8"
+      case "sma":
+        return "Contoh: Kelas 12 IPA"
+      case "universitas":
+        return "Contoh: Semester 4"
+      case "umum":
+        return "Contoh: Guru / Wali Murid" // Atau placeholder lain yang sesuai
+      default:
+        return "Contoh: Kelas 12 IPA / Semester 6"
+    }
+  }
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -391,7 +429,7 @@ export function EducationFields({ formData, validationErrors, onInputChange, onF
           value={formData.school}
           onChange={(e) => onInputChange("school", e.target.value)}
           className={`bg-slate-800/50 border-slate-600 text-white ${validationErrors.school ? "border-red-500" : ""}`}
-          placeholder="Contoh: SMA Negeri 1 Jakarta"
+          placeholder={getSchoolPlaceholder()}
         />
         {validationErrors.school && <span className="text-xs text-red-400">{validationErrors.school}</span>}
       </div>
@@ -412,7 +450,7 @@ export function EducationFields({ formData, validationErrors, onInputChange, onF
           className={`bg-slate-800/50 border-slate-600 text-white ${
             validationErrors.grade ? "border-red-500" : ""
           }`}
-          placeholder="Contoh: Kelas 12 IPA / Semester 6"
+          placeholder={getGradePlaceholder()}
         />
         {validationErrors.grade && <span className="text-xs text-red-400">{validationErrors.grade}</span>}
       </div>
