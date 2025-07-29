@@ -29,9 +29,20 @@ export function SponsorsSection() {
       name: "Zona Lomba",
       logo: "/images/partners/zona-lomba-logo.png",
       website: "#",
-    },{
+    },
+    {
       name: "RTC UI",
       logo: "/images/partners/rtc-ui-logo.jpeg",
+      website: "#",
+    },
+    {
+      name: "AIESEC",
+      logo: "/images/partners/aiesec-logo.png",
+      website: "#",
+    },
+        {
+      name: "infoeventku_",
+      logo: "/images/partners/logo_infoeventku_.png",
       website: "#",
     },
   ]
