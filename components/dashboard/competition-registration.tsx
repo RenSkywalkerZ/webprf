@@ -792,13 +792,16 @@ export function CompetitionRegistration({ userData, onRegisterCompetition }: Com
                         handleRegister(competition.id)
                       }
                     }}
-                    disabled={
-                      !canRegisterNewCompetition() ||
-                      (isRegistered(competition.id) &&
-                        (registrationStatus !== "pending" || !!(registration && registration.payment_proof_url))) ||
-                      !currentBatchId ||
-                      registrationClosed
-                    }
+disabled={
+// Logika baru: Tombol dinonaktifkan untuk pendaftar baru jika registrasi ditutup,
+// tapi tetap aktif untuk yang sudah 'pending' agar bisa lanjut bayar.
+(!isRegistered(competition.id) && !canRegisterNewCompetition()) ||
+// Menonaktifkan tombol jika sudah terdaftar DAN statusnya bukan 'pending tanpa pembayaran'
+(isRegistered(competition.id) &&
+(registrationStatus !== "pending" || !!(registration && registration.payment_proof_url))) ||
+// Menonaktifkan jika tidak ada batch yang aktif
+!currentBatchId
+}
                     className={`w-full sm:w-auto
                       ${
                         registrationStatus === "approved"
@@ -846,7 +849,7 @@ export function CompetitionRegistration({ userData, onRegisterCompetition }: Com
                       </div>
                     ) : !canRegisterNewCompetition() ? (
                       <div className="flex items-center gap-2">
-                        {hasApprovedRegistration() ? "Sudah Terdaftar" : "Sedang Verifikasi"}
+                        {hasApprovedRegistration() ? "Sudah Terdaftar" : "Sedang Tutup"}
                       </div>
                     ) : !currentBatchId || registrationClosed ? (
                       <div className="flex items-center gap-2">Pendaftaran Tutup</div>
