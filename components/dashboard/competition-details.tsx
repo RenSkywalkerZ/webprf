@@ -1,9 +1,11 @@
 "use client"
-import { useState, useEffect } from "react"
+import { useState, useEffect, ChangeEvent } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Input } from "@/components/ui/input"
+import { useToast } from "@/hooks/use-toast"
 import {
   Trophy,
   CheckCircle,
@@ -11,13 +13,16 @@ import {
   AlertCircle,
   Calendar,
   Phone,
-  Mail,
   User,
   ExternalLink,
   Info,
   Lock,
   MapPin,
+  Upload,
+  ImageIcon, // <-- Pastikan ikon ini diimpor
 } from "lucide-react"
+
+// ... (Interface dan state lainnya tetap sama) ...
 
 interface UserData {
   id: string
@@ -52,7 +57,9 @@ export function CompetitionDetails({ userData }: CompetitionDetailsProps) {
   const [registrations, setRegistrations] = useState<Registration[]>([])
   const [competitions, setCompetitions] = useState<Competition[]>([])
   const [isLoading, setIsLoading] = useState(true)
-
+  const [reuploadFile, setReuploadFile] = useState<File | null>(null)
+  const [isReuploading, setIsReuploading] = useState(false)
+  const { toast } = useToast()
 
   useEffect(() => {
     fetchData()
@@ -60,14 +67,12 @@ export function CompetitionDetails({ userData }: CompetitionDetailsProps) {
 
   const fetchData = async () => {
     try {
-      // Fetch user registrations
       const registrationsResponse = await fetch("/api/users/registrations")
       if (registrationsResponse.ok) {
         const { registrations } = await registrationsResponse.json()
         setRegistrations(registrations)
       }
 
-      // Fetch competitions
       const competitionsResponse = await fetch("/api/competitions")
       if (competitionsResponse.ok) {
         const { competitions } = await competitionsResponse.json()
@@ -77,6 +82,60 @@ export function CompetitionDetails({ userData }: CompetitionDetailsProps) {
       console.error("Error fetching data:", error)
     } finally {
       setIsLoading(false)
+    }
+  }
+  
+  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setReuploadFile(e.target.files[0])
+    }
+  }
+
+  const handleReupload = async (registrationId: string) => {
+    if (!reuploadFile) {
+      toast({
+        title: "File Belum Dipilih",
+        description: "Silakan pilih file bukti pembayaran untuk diunggah.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    setIsReuploading(true)
+    const formData = new FormData()
+    formData.append("file", reuploadFile)
+    formData.append("registrationId", registrationId)
+
+    try {
+      const response = await fetch("/api/registrations/reupload", {
+        method: "POST",
+        body: formData,
+      })
+
+      if (response.ok) {
+        toast({
+          title: "Berhasil Diunggah Ulang!",
+          description: "Status pendaftaran Anda akan segera diperbarui oleh admin.",
+        })
+        setReuploadFile(null)
+        fetchData()
+      } else {
+        const errorData = await response.json()
+        toast({
+          title: "Gagal Mengunggah",
+          description: errorData.message || "Terjadi kesalahan pada server.",
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      console.error("Error re-uploading file:", error)
+      toast({
+        title: "Terjadi Kesalahan",
+        description: "Tidak dapat terhubung ke server. Silakan coba lagi.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsReuploading(false)
     }
   }
 
@@ -119,16 +178,15 @@ export function CompetitionDetails({ userData }: CompetitionDetailsProps) {
         ]
       case "rejected":
         return [
-          "❌ Pembayaran tidak dapat diverifikasi",
-          "💬 Hubungi admin untuk klarifikasi (Hugo: 0851 1738 5115)",
-          "🔄 Lakukan pendaftaran ulang jika diperlukan",
+          "❌ Verifikasi pembayaran/berkas gagal.",
+          "📤 Silakan unggah ulang bukti pembayaran atau berkas yang benar.",
+          "💬 Hubungi admin untuk klarifikasi jika mengalami kendala.",
         ]
       default:
         return ["⏳ Status sedang diproses"]
     }
   }
 
-  // Get WhatsApp link based on competition title
   const getWhatsappLink = (competitionTitle: string) => {
     const whatsappLinks: { [key: string]: string } = {
       "Physics Competition": "https://chat.whatsapp.com/Bct2vK3MeI3A9veXApss82?mode=ac_t",
@@ -139,10 +197,9 @@ export function CompetitionDetails({ userData }: CompetitionDetailsProps) {
       "Cerdas Cermat": "https://chat.whatsapp.com/Bct2vK3MeI3A9veXApss82?mode=ac_t",
       "Roket Air": "https://chat.whatsapp.com/Bct2vK3MeI3A9veXApss82?mode=ac_t",
     };
-    return whatsappLinks[competitionTitle] || "#"; // Returns a fallback link '#' if not found
+    return whatsappLinks[competitionTitle] || "#";
   };
 
-  // Competition-specific schedules
   const getCompetitionSchedule = (competitionTitle: string) => {
     const schedules = {
       "Physics Competition": [
@@ -410,7 +467,6 @@ export function CompetitionDetails({ userData }: CompetitionDetailsProps) {
     },
   ]
 
-  // Check if user has approved registration
   const hasApprovedRegistration = registrations.some((reg: any) => reg.status === "approved")
 
   if (isLoading) {
@@ -602,21 +658,65 @@ export function CompetitionDetails({ userData }: CompetitionDetailsProps) {
                         </p>
                       </div>
                     )}
-
+                    
+                    {/* --- BLOK UTAMA UNTUK UPLOAD ULANG --- */}
                     {registration.status === "rejected" && (
-                      <div className="bg-gradient-to-r from-red-500/10 to-orange-500/10 border border-red-500/30 rounded-lg p-4">
-                        <div className="flex items-center gap-2 mb-3">
+                      <div className="bg-gradient-to-r from-red-500/10 to-orange-500/10 border border-red-500/30 rounded-lg p-4 space-y-4">
+                        <div className="flex items-center gap-2">
                           <AlertCircle className="w-5 h-5 text-red-400" />
                           <span className="text-red-300 font-semibold">Pendaftaran Ditolak</span>
                         </div>
-                        <p className="text-slate-300 text-sm mb-4">
-                          Pembayaran Anda tidak dapat diverifikasi. Silakan hubungi admin untuk informasi lebih lanjut
-                          atau lakukan pendaftaran ulang (Hugo: 0851 1738 5115).
+                        <p className="text-slate-300 text-sm">
+                          Pembayaran atau berkas Anda tidak dapat diverifikasi. Silakan unggah ulang berkas yang benar. Jika ada kendala, hubungi admin.
                         </p>
-                        <Button size="sm" className="bg-red-600 hover:bg-red-700 text-white">
-                          <Phone className="w-4 h-4 mr-2" />
-                          Hubungi Admin
-                        </Button>
+                        
+                        {/* --- MODIFIKASI: Menambahkan Instruksi Detail --- */}
+                        <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-4">
+                          <h4 className="text-amber-300 font-medium mb-2">Dokumen yang Wajib Diunggah:</h4>
+                          <ul className="text-amber-100 text-sm space-y-1 list-disc list-inside">
+                            <li>Bukti transfer</li>
+                            <li>Foto diri peserta setengah badan (jika tim, seluruh anggota tim)</li>
+                            <li>Kartu identitas peserta (jika tim, seluruh anggota tim)</li>
+                            <li>Screenshot Twibbon yang telah dipasang pada instagram (jika tim, seluruh anggota tim)</li>
+                          </ul>
+                          <p className="text-amber-100 text-sm mt-2">
+                            Seluruh dokumen di atas digabungkan jadi satu (merge) dan dikirim dalam format <span className="font-medium">.pdf, .jpeg, .jpg,</span> atau <span className="font-medium">.png</span>.
+                          </p>
+                           <div className="pt-3">
+                            <a href="https://bit.ly/TwibbonPRFXIII" target="_blank" rel="noopener noreferrer">
+                              <Button size="sm" variant="outline" className="border-purple-500/30 text-purple-300 hover:bg-purple-500/10 hover:text-purple-200">
+                                <ImageIcon className="w-4 h-4 mr-2" />
+                                Buka Link Twibbon
+                              </Button>
+                            </a>
+                          </div>
+                        </div>
+                        
+                        {/* FITUR UPLOAD ULANG */}
+                        <div className="flex flex-col sm:flex-row gap-3">
+                          <Input
+                            type="file"
+                            onChange={handleFileChange}
+                            className="bg-slate-800 border-slate-600 text-slate-300 file:text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-slate-700 hover:file:bg-slate-600"
+                          />
+                           <Button 
+                            onClick={() => handleReupload(registration.id)} 
+                            disabled={!reuploadFile || isReuploading}
+                            className="bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50"
+                          >
+                            <Upload className="w-4 h-4 mr-2" />
+                            {isReuploading ? "Mengunggah..." : "Upload Ulang"}
+                          </Button>
+                        </div>
+                        
+                        <div className="pt-4 mt-4 border-t border-red-400/20">
+                          <a href="https://wa.me/6285117385115" target="_blank" rel="noopener noreferrer">
+                              <Button size="sm" className="bg-red-600 hover:bg-red-700 text-white w-full sm:w-auto">
+                              <Phone className="w-4 h-4 mr-2" />
+                              Hubungi Admin (WhatsApp)
+                            </Button>
+                          </a>
+                        </div>
                       </div>
                     )}
                   </CardContent>
@@ -655,32 +755,24 @@ export function CompetitionDetails({ userData }: CompetitionDetailsProps) {
                             };
 
                             let displayDate: string;
-                            // Use the 'in' operator as a robust type guard
                             if ('date' in event && event.date) {
                               displayDate = formatDate(event.date);
                             } else if ('startDate' in event && 'endDate' in event && event.startDate && event.endDate) {
                               displayDate = `${formatDate(event.startDate)} - ${formatDate(event.endDate)}`;
                             } else {
-                              displayDate = "Jadwal tidak tersedia"; // Fallback for safety
+                              displayDate = "Jadwal tidak tersedia";
                             }
 
                             return (
                               <div key={index} className="flex items-start gap-4 p-4 bg-slate-800/50 rounded-lg">
-                                {/* Icon */}
                                 <div className="w-12 h-12 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-lg flex-shrink-0 flex items-center justify-center">
                                   <Calendar className="w-6 h-6 text-white" />
                                 </div>
-
-                                {/* Details */}
                                 <div className="flex-1">
                                   <h3 className="text-white font-semibold">{event.title}</h3>
-                                  
-                                  {/* Date */}
                                   <p className="text-slate-400 text-sm mt-1">
                                     {displayDate}
                                   </p>
-
-                                  {/* Location (displays only if event.location exists) */}
                                     {'location' in event && event.location && (
                                       <div className="flex items-center gap-2 mt-2">
                                         <MapPin className="w-4 h-4 text-slate-500" />
