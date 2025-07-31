@@ -3,7 +3,7 @@ import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Calendar, Trophy, CheckCircle, Clock, XCircle, AlertTriangle, ImageIcon } from "lucide-react"
+import { Calendar, Trophy, CheckCircle, Clock, XCircle, AlertTriangle, ImageIcon, Info } from "lucide-react"
 
 interface UserDashboardProps {
   userData: any
@@ -13,6 +13,7 @@ export function UserDashboard({ userData }: UserDashboardProps) {
   const [registrations, setRegistrations] = useState<any[]>([])
   const [competitions, setCompetitions] = useState<any[]>([])
   const [currentBatch, setCurrentBatch] = useState<any>(null)
+  const [registrationClosed, setRegistrationClosed] = useState<boolean>(true)
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
@@ -40,8 +41,9 @@ export function UserDashboard({ userData }: UserDashboardProps) {
 
         // Proses hasil dari current batch
         if (batchResponse.ok) {
-          const { batch } = await batchResponse.json();
+          const { batch, registrationClosed } = await batchResponse.json();
           setCurrentBatch(batch);
+          setRegistrationClosed(registrationClosed);
         }
 
       } catch (error) {
@@ -204,6 +206,40 @@ export function UserDashboard({ userData }: UserDashboardProps) {
         </CardContent>
       </Card>
 
+{/* Batch Closed Notice Card - START */}
+<Card className="bg-slate-900/50 border-slate-700">
+  <CardContent className="p-4 sm:p-6">
+    <div className="bg-blue-900/50 border border-blue-700 rounded-lg p-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 mb-2">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-cyan-600 rounded-lg flex items-center justify-center">
+            <Info className="w-5 h-5 text-white" />
+          </div>
+          <h3 className="text-white font-semibold">Batch 1 Telah Ditutup</h3>
+        </div>
+        <span className="text-slate-400 text-sm">
+          {new Date().toLocaleDateString("id-ID", {
+            day: "numeric",
+            month: "long",
+            year: "numeric",
+          })}
+        </span>
+      </div>
+      <div className="border-t border-slate-700 my-3"></div>
+      <div className="space-y-2 text-sm text-slate-300">
+        <p>
+          Terima kasih atas partisipasi dan antusiasme Anda dalam pendaftaran <strong>Batch 1</strong>.  
+          Pendaftaran <strong>Batch 2</strong> akan dibuka mulai tanggal <strong>1 Agustus 2025</strong>.
+        </p>
+        <p>
+          Saat ini, proses verifikasi untuk peserta Batch 1 <strong>masih berlangsung</strong>. Mohon kesabaran Anda selama tim kami melakukan pengecekan secara menyeluruh, mengingat banyaknya jumlah pendaftar yang harus diverifikasi.
+        </p>
+      </div>
+    </div>
+  </CardContent>
+</Card>
+{/* Batch Closed Notice Card - END */}
+
       {/* Current Batch Info */}
       <Card className="bg-slate-900/50 border-slate-700">
         <CardHeader>
@@ -212,29 +248,29 @@ export function UserDashboard({ userData }: UserDashboardProps) {
             Batch Pendaftaran Saat Ini:
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          {currentBatch ? (
-            <div className="bg-gradient-to-r from-cyan-500/10 to-blue-500/10 border border-cyan-500/30 rounded-lg p-4">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-white font-semibold">{currentBatch.name}</h3>
-              </div>
-              <div className="space-y-2 text-sm">
-                <div>
-                  <span className="text-slate-400">Periode Pendaftaran: </span>
-                  <span className="text-white">
-                    {new Date(currentBatch.start_date).toLocaleDateString("id-ID")} -{" "}
-                    {new Date(currentBatch.end_date).toLocaleDateString("id-ID")}
-                  </span>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="text-center py-8 text-slate-400">
-              <Calendar className="w-12 h-12 mx-auto mb-4 text-slate-600" />
-              <p>Tidak ada batch aktif saat ini</p>
-            </div>
-          )}
-        </CardContent>
+<CardContent>
+  {currentBatch && !registrationClosed ? (
+    <div className="bg-gradient-to-r from-cyan-500/10 to-blue-500/10 border border-cyan-500/30 rounded-lg p-4">
+      <div className="flex items-center justify-between mb-2">
+        <h3 className="text-white font-semibold">{currentBatch.name}</h3>
+      </div>
+      <div className="space-y-2 text-sm">
+        <div>
+          <span className="text-slate-400">Periode Pendaftaran: </span>
+          <span className="text-white">
+            {new Date(currentBatch.start_date).toLocaleDateString("id-ID")} -{" "}
+            {new Date(currentBatch.end_date).toLocaleDateString("id-ID")}
+          </span>
+        </div>
+      </div>
+    </div>
+  ) : (
+    <div className="text-center py-8 text-slate-400">
+      <Calendar className="w-12 h-12 mx-auto mb-4 text-slate-600" />
+      <p>Tidak ada batch aktif saat ini</p>
+    </div>
+  )}
+</CardContent>
       </Card>
 
       {/* Registration Status */}
