@@ -103,13 +103,13 @@ export function CompetitionRegistration({ userData, onRegisterCompetition }: Com
     "9517aa1c-3d72-4b6d-a30c-0ca4eed9a5b0",
   ];
   const COMPETITION_STARTING_PRICES: { [key: string]: number } = {
-    "b4415647-d77b-40af-81ac-956a49498ff2": 100000,
-    "22270c4a-4f38-40fb-854e-daa58336f0d9": 280000,
-    "331aeb0c-8851-4638-aa34-6502952f098b": 90000,
-    "3d4e5cca-cf3d-45d7-8849-2a614b82f4d4": 120000,
-    "43ec1f50-2102-4a4b-995b-e33e61505b22": 250000,
-    "4cbe04f2-222b-4d44-8dd2-25821a66d467": 200000,
-    "9517aa1c-3d72-4b6d-a30c-0ca4eed9a5b0": 150000,
+    "b4415647-d77b-40af-81ac-956a49498ff2": 130000,
+    "22270c4a-4f38-40fb-854e-daa58336f0d9": 310000,
+    "331aeb0c-8851-4638-aa34-6502952f098b": 120000,
+    "3d4e5cca-cf3d-45d7-8849-2a614b82f4d4": 150000,
+    "43ec1f50-2102-4a4b-995b-e33e61505b22": 280000,
+    "4cbe04f2-222b-4d44-8dd2-25821a66d467": 230000,
+    "9517aa1c-3d72-4b6d-a30c-0ca4eed9a5b0": 180000,
   };
   const GUIDEBOOK_LINKS: { [key: string]: string } = {
     "b4415647-d77b-40af-81ac-956a49498ff2": "https://tinyurl.com/PhysicsCompetitionGBPRFXIII",
