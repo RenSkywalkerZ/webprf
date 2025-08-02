@@ -207,7 +207,7 @@ export function UserDashboard({ userData }: UserDashboardProps) {
       </Card>
 
 {/* Batch Closed Notice Card - START */}
-<Card className="bg-slate-900/50 border-slate-700">
+{/* <Card className="bg-slate-900/50 border-slate-700">
   <CardContent className="p-4 sm:p-6">
     <div className="bg-blue-900/50 border border-blue-700 rounded-lg p-4">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 mb-2">
@@ -237,7 +237,7 @@ export function UserDashboard({ userData }: UserDashboardProps) {
       </div>
     </div>
   </CardContent>
-</Card>
+</Card> */}
 {/* Batch Closed Notice Card - END */}
 
       {/* Current Batch Info */}

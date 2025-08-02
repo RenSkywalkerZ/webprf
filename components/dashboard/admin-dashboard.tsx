@@ -2,8 +2,7 @@
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-// Tambahkan UserCog atau ikon lain untuk admin
-import { Shield, Users, Trophy, TrendingUp, Calendar, CheckCircle, Clock, UserCog } from "lucide-react" 
+import { Shield, Users, Trophy, Upload, Calendar, Clock, UserCog } from "lucide-react" 
 
 interface AdminDashboardProps {
   userData: any
@@ -12,10 +11,12 @@ interface AdminDashboardProps {
 export function AdminDashboard({ userData }: AdminDashboardProps) {
   const [stats, setStats] = useState({
     totalUsers: 0,
-    totalAdmins: 0, // PERUBAHAN: State baru untuk total admin
+    totalAdmins: 0, 
     totalRegistrations: 0,
+    // MODIFIKASI 1: Menambahkan state baru untuk menampung data user yang belum bayar.
+    // Nilai `activeCompetitions` yang sebelumnya hardcoded sudah tidak relevan dan dihapus.
+    pendingPaymentAndDocs: 0,
     pendingApprovals: 0,
-    activeCompetitions: 8,
     recentActivity: [],
   })
   const [currentBatch, setCurrentBatch] = useState<any>(null)
@@ -37,22 +38,33 @@ export function AdminDashboard({ userData }: AdminDashboardProps) {
       ])
 
       let totalUsers = 0
-      let totalAdmins = 0 // PERUBAHAN: Variabel baru untuk menampung hitungan admin
+      let totalAdmins = 0
       let totalRegistrations = 0
       let pendingApprovals = 0
+      // MODIFIKASI 2: Menyiapkan variabel untuk kalkulasi baru.
+      let pendingPaymentAndDocs = 0
 
       if (participantsRes.ok) {
         const { participants } = await participantsRes.json()
         totalRegistrations = participants.length
-        pendingApprovals = participants.filter((p: any) => p.status === "pending").length
-        console.log("📊 Participants data:", { totalRegistrations, pendingApprovals })
+        
+        // Kalkulasi untuk user yang sudah bayar dan menunggu persetujuan admin.
+        pendingApprovals = participants.filter(
+          (p: any) => p.status === "pending" && p.payment_proof_url
+        ).length
+
+        // MODIFIKASI 3: Menambahkan logika baru untuk menghitung user yang statusnya 'pending' TAPI BELUM upload bukti bayar.
+        pendingPaymentAndDocs = participants.filter(
+          (p: any) => p.status === "pending" && !p.payment_proof_url
+        ).length
+        
+        console.log("📊 Participants data:", { totalRegistrations, pendingApprovals, pendingPaymentAndDocs })
       } else {
         console.error("❌ Failed to fetch participants:", participantsRes.status)
       }
 
       if (usersRes.ok) {
         const { users } = await usersRes.json()
-        // PERUBAHAN: Filter pengguna berdasarkan peran
         totalUsers = users.filter((u: any) => u.role === 'user').length
         totalAdmins = users.filter((u: any) => u.role === 'admin').length
         console.log("👥 Users data:", { totalUsers, totalAdmins })
@@ -69,12 +81,13 @@ export function AdminDashboard({ userData }: AdminDashboardProps) {
         console.error("❌ Failed to fetch current batch:", batchesRes.status)
       }
 
+      // MODIFIKASI 4: Memasukkan hasil kalkulasi baru ke dalam state.
       setStats({
         totalUsers,
-        totalAdmins, // PERUBAHAN: Simpan hitungan admin ke state
+        totalAdmins,
         totalRegistrations,
+        pendingPaymentAndDocs,
         pendingApprovals,
-        activeCompetitions: 8,
         recentActivity: [],
       })
 
@@ -104,7 +117,6 @@ export function AdminDashboard({ userData }: AdminDashboardProps) {
           <div className="h-8 bg-slate-700 rounded w-1/3 mb-2"></div>
           <div className="h-4 bg-slate-700 rounded w-1/2"></div>
         </div>
-        {/* PERUBAHAN: Skeleton loading sekarang menjadi 5 card */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
           {[...Array(5)].map((_, i) => (
             <div key={i} className="animate-pulse bg-slate-800 rounded-lg p-6">
@@ -160,13 +172,12 @@ export function AdminDashboard({ userData }: AdminDashboardProps) {
       )}
 
       {/* Stats Cards */}
-      {/* PERUBAHAN: Grid sekarang memiliki 5 kolom untuk mengakomodasi card baru */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
         <Card className="bg-gradient-to-br from-blue-500/10 to-blue-600/10 border-blue-500/30">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-blue-300 text-sm font-medium">Total Peserta</p>
+                <p className="text-blue-300 text-sm font-medium">Total Akun</p>
                 <p className="text-3xl font-bold text-white">{stats.totalUsers}</p>
               </div>
               <Users className="w-8 h-8 text-blue-400" />
@@ -174,7 +185,6 @@ export function AdminDashboard({ userData }: AdminDashboardProps) {
           </CardContent>
         </Card>
 
-        {/* PERUBAHAN: CARD BARU UNTUK ADMIN */}
         <Card className="bg-gradient-to-br from-red-500/10 to-red-600/10 border-red-500/30">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -199,26 +209,27 @@ export function AdminDashboard({ userData }: AdminDashboardProps) {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-yellow-500/10 to-yellow-600/10 border-yellow-500/30">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-yellow-300 text-sm font-medium">Menunggu Persetujuan</p>
-                <p className="text-3xl font-bold text-white">{stats.pendingApprovals}</p>
-              </div>
-              <Clock className="w-8 h-8 text-yellow-400" />
-            </div>
-          </CardContent>
-        </Card>
-
         <Card className="bg-gradient-to-br from-purple-500/10 to-purple-600/10 border-purple-500/30">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-purple-300 text-sm font-medium">Kompetisi Aktif</p>
-                <p className="text-3xl font-bold text-white">{stats.activeCompetitions}</p>
+                <p className="text-purple-300 text-sm font-medium">Menunggu Pembayaran & Berkas</p>
+                {/* MODIFIKASI 5: Mengubah nilai yang ditampilkan ke state yang benar. */}
+                <p className="text-3xl font-bold text-white">{stats.pendingPaymentAndDocs}</p>
               </div>
-              <TrendingUp className="w-8 h-8 text-purple-400" />
+              <Upload className="w-8 h-8 text-purple-400" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-yellow-500/10 to-yellow-600/10 border-yellow-500/30">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-yellow-300 text-sm font-medium">Menunggu Persetujuan (Sudah Bayar)</p>
+                <p className="text-3xl font-bold text-white">{stats.pendingApprovals}</p>
+              </div>
+              <Clock className="w-8 h-8 text-yellow-400" />
             </div>
           </CardContent>
         </Card>
