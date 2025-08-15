@@ -7,17 +7,22 @@ export function TimelineSection() {
     },
     {
       title: "Pendaftaran Lomba",
-      date: "7 Juli - 27 Agustus 2025",
+      date: "7 Juli - 21 September 2025",
       location: null,
     },
     {
       title: "Grand Opening PRF XIII",
-      date: "1 September 2025",
-      location: null,
+      date: "25 September 2025",
+      location: "Online",
+    },
+    {
+      title: "Technical Meeting PRF XIII",
+      date: "26 September 2025",
+      location: "Online",
     },
     {
       title: "Kegiatan Perlombaan",
-      date: "2 September - 1 November 2025",
+      date: "27 September - 1 November 2025",
       location: null,
     },
     {
