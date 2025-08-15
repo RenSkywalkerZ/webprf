@@ -325,37 +325,55 @@ export function PaymentPage({ registrationId }: PaymentPageProps) {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/30 rounded-lg p-4">
-                <h3 className="text-white font-semibold mb-2">Transfer Bank</h3>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">Bank:</span>
-                    <span className="text-white font-medium">blu by BCA Digital</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">No. Rekening:</span>
-                    <span className="text-white font-medium">006749948216</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">Atas Nama:</span>
-                    <span className="text-white font-medium">Aubin Athaya Raihan Setiawan</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">Jumlah:</span>
-                    <span className="text-green-400 font-bold">{formatCurrency(price)}</span>
-                  </div>
-                </div>
-              </div>
-              <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-4">
-                <h4 className="text-amber-300 font-medium mb-2">Penting:</h4>
-                <ul className="text-amber-100 text-sm space-y-1">
-                  <li>• Transfer sesuai dengan jumlah yang tertera</li>
-                  <li>• Simpan bukti transfer untuk diunggah</li>
-                  <li>• Pembayaran akan diverifikasi dalam 1x24 jam</li>
-                  <li>• Hubungi admin jika ada kendala</li>
-                </ul>
-              </div>
-            </CardContent>
+  <div className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/30 rounded-lg p-4">
+    <h3 className="text-white font-semibold mb-3">Transfer Bank</h3>
+    <div className="space-y-3 text-sm">
+      
+      {/* BAGIAN YANG DIPERBARUI */}
+      <div>
+        <div className="flex justify-between items-center">
+          <span className="text-slate-400">Bank:</span>
+          <div className="flex items-center gap-2">
+            <img 
+        src="/blu-logo.svg" 
+        alt="Logo blu by BCA Digital"
+        className="w-12 h-12" // Atur ukuran logo di sini
+      />
+            <span className="text-white font-semibold">BCA Digital (blu)</span>
+          </div>
+        </div>
+        <div className="text-right mt-1.5">
+            <p className="inline-block text-xs text-amber-300/90 bg-amber-500/10 px-2 py-1 rounded-md">
+            <strong className="font-bold text-amber-200">blu by BCA Digital</strong>, bukan Bank BCA.
+            </p>
+        </div>
+      </div>
+      {/* AKHIR BAGIAN YANG DIPERBARUI */}
+
+      <div className="flex justify-between">
+        <span className="text-slate-400">No. Rekening:</span>
+        <span className="text-white font-medium">006749948216</span>
+      </div>
+      <div className="flex justify-between">
+        <span className="text-slate-400">Atas Nama:</span>
+        <span className="text-white font-medium">Aubin Athaya Raihan Setiawan</span>
+      </div>
+      <div className="flex justify-between items-center"> {/* Tambahkan items-center agar align rapi */}
+        <span className="text-slate-400">Jumlah:</span>
+        <span className="text-green-400 font-bold text-2xl">{formatCurrency(price)}</span> {/* Tambahkan text-xl */}
+      </div>
+    </div>
+  </div>
+  <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-4">
+    <h4 className="text-amber-300 font-medium mb-2">Penting:</h4>
+    <ul className="text-amber-100 text-sm space-y-1">
+      <li>• Transfer sesuai dengan jumlah yang tertera</li>
+      <li>• Simpan bukti transfer untuk diunggah</li>
+      <li>• Pembayaran akan diverifikasi dalam 1x24 jam</li>
+      <li>• Hubungi admin jika ada kendala</li>
+    </ul>
+  </div>
+</CardContent>
           </Card>
 
           {/* Upload Payment Proof */}

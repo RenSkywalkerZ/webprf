@@ -1328,15 +1328,6 @@ export function AdminPanel({ userData }: AdminPanelProps) {
                       </div>
                       <div className="flex items-center gap-2">
                         <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => window.print()}
-                          className="border-slate-600 text-white hover:bg-slate-700"
-                        >
-                          <Printer className="w-4 h-4 mr-2" />
-                          Print
-                        </Button>
-                        <Button
                           onClick={() => exportToXlsx(competitionId)}
                           disabled={isExporting || competitionParticipants.length === 0}
                           className="bg-green-600 hover:bg-green-700 text-white"
