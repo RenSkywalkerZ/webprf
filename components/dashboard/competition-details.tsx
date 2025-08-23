@@ -204,224 +204,194 @@ export function CompetitionDetails({ userData }: CompetitionDetailsProps) {
     const schedules = {
       "Physics Competition": [
         {
-          title: "Technical Meeting Babak Penyisihan",
-          date: "2025-09-02",
+          "title": "Technical Meeting Babak Penyisihan",
+          "date": "2025-09-26"
         },
         {
-          title: "Babak Penyisihan",
-          date: "2025-10-04",
-          time: "08:00 - 11:00 WIB",
+          "title": "Babak Penyisihan",
+          "date": "2025-10-11"
         },
         {
-          title: "Pengumuman Babak Penyisihan",
-          date: "2025-10-12",
-          time: "15:00 WIB",
+          "title": "Pengumuman Babak Penyisihan",
+          "date": "2025-10-17"
         },
         {
-          title: "Technical Meeting Babak Semifinal dan Final",
-          date: "2025-10-18",
-          time: "19:00 WIB",
+          "title": "Technical Meeting Babak Semifinal dan Final",
+          "date": "2025-10-24"
         },
         {
-          title: "Babak Semifinal dan Pengumuman Finalis",
-          date: "2025-10-31",
-          time: "08:00 - 12:00 WIB",
+          "title": "Babak Semifinal",
+          "date": "2025-10-31"
         },
         {
-          title: "Babak Final dan Pengumuman Pemenang",
-          date: "2025-11-07",
-          time: "15:00 WIB",
+          "title": "Pengumuman Babak Semifinal",
+          "date": "2025-10-31"
         },
+        {
+          "title": "Babak Final dan Pengumuman Pemenang",
+          "date": "2025-11-01"
+        }
       ],
         "Depict Physics": [
         {
-          title: "Technical Meeting",
-          date: "2025-09-02",
+          "title": "Technical Meeting",
+          "date": "2025-09-26"
         },
         {
-          title: "Babak Penyisihan",
-          startDate: "2025-09-03",
-          endDate: "2025-09-26",
+          "title": "Babak Penyisihan",
+          "startDate": "2025-09-26",
+          "endDate": "2025-09-30"
         },
         {
-          title: "Pengumuman Babak Penyisihan",
-          date: "2025-09-29",
+          "title": "Pengumuman Babak Penyisihan",
+          "date": "2025-10-11"
         },
         {
-          title: "Babak Final",
-          date: "2025-09-30",
+          "title": "Babak Final",
+          "startDate": "2025-10-12",
+          "endDate": "2025-10-25"
         },
         {
-          title: "Pengumuman Babak Final",
-          date: "2025-10-13",
-        },
-        {
-          title: "Pengumuman Pemenang",
-          date: "2025-11-01",
+          "title": "Closing Ceremony dan Pengumuman Pemenang",
+          "date": "2025-11-01"
         },
       ],
       "Lomba Praktikum": [
         {
-          title: "Technical Meeting",
-          date: "2025-09-12",
-          location: "Zoom Meeting",
+          "title": "Technical Meeting",
+          "date": "2025-09-26",
         },
         {
-          title: "Babak Penyisihan",
-          date: "2025-10-31",
-          location: "Gedung UPP-IPD FMIPA UI",
+          "title": "Babak Penyisihan",
+          "date": "2025-10-31",
         },
         {
-          title: "Pengumuman Babak Penyisihan",
-          date: "2025-10-31",
-          location: "Balairung UI",
+          "title": "Pengumuman Babak Penyisihan",
+          "date": "2025-10-31",
         },
         {
-          title: "Babak Final",
-          date: "2025-11-01",
-          location: "Gedung UPP-IPD FMIPA UI",
+          "title": "Babak Final",
+          "date": "2025-11-01",
         },
         {
-          title: "Pengumuman Babak Final",
-          date: "2025-11-01",
-          location: "Balairung UI",
+          "title": "Pengumuman Babak Final",
+          "date": "2025-11-01",
+        },
+        {
+          "title": "Closing Ceremony dan Pengumuman Pemenang",
+          "date": "2025-11-01",
         },
       ],
       "Science Project": [
         {
-          title: "Technical Meeting",
-          date: "2025-09-02",
+          "title": "Technical Meeting Babak Penyisihan",
+          "date": "2025-09-26"
         },
         {
-          title: "Babak Seleksi Proposal",
-          startDate: "2025-09-03",
-          endDate: "2025-09-17",
+          "title": "Babak Penyisihan",
+          "startDate": "2025-09-26",
+          "endDate": "2025-09-30"
         },
         {
-          title: "Pengumuman Babak Seleksi Proposal",
-          date: "2025-09-29",
+          "title": "Pengumuman Babak Penyisihan",
+          "date": "2025-10-08"
         },
         {
-          title: "Babak Seleksi Video",
-          startDate: "2025-09-30",
-          endDate: "2025-10-10",
+          "title": "Babak Semifinal",
+          "startDate": "2025-10-09",
+          "endDate": "2025-10-15"
         },
         {
-          title: "Pengumuman Babak Seleksi Video",
-          date: "2025-10-17",
+          "title": "Pengumuman Babak Semifinal",
+          "date": "2025-10-24"
         },
         {
-          title: "Babak Presentasi",
-          date: "2025-10-31",
-          location: "Gedung Lab. Riset Multidisiplin FMIPA UI",
+          "title": "Babak Final",
+          "date": "2025-10-31"
         },
         {
-          title: "Pengumuman Babak Presentasi",
-          date: "2025-11-01",
-          location: "Balairung UI",
+          "title": "Closing Ceremony dan Pengumuman Pemenang",
+          "date": "2025-11-01"
         },
       ],
       "Scientific Writing": [
         {
-          title: "Technical Meeting",
-          date: "2025-09-02",
-          location: "Zoom Meeting",
+          "title": "Technical Meeting",
+          "date": "2025-09-26",
         },
         {
-          title: "Babak Penyisihan",
-          startDate: "2025-09-03",
-          endDate: "2025-09-06",
-          location: "Website Pesta Rakyat Fisika XIII",
+          "title": "Babak Penyisihan",
+          "startDate": "2025-09-26",
+          "endDate": "2025-09-29",
         },
         {
-          title: "Pengumuman Babak Penyisihan",
-          date: "2025-09-08",
-          location: "Website Pesta Rakyat Fisika XIII dan Grup WhatsApp",
+          "title": "Pengumuman Babak Penyisihan",
+          "date": "2025-10-01",
         },
         {
-          title: "Babak Semifinal",
-          startDate: "2025-09-09",
-          endDate: "2025-09-28",
-          location: "Website Pesta Rakyat Fisika XIII",
+          "title": "Babak Semifinal",
+          "startDate": "2025-10-01",
+          "endDate": "2025-10-10",
         },
         {
-          title: "Pengumuman Babak Semifinal",
-          date: "2025-10-15",
-          location: "Website Pesta Rakyat Fisika XIII dan Grup WhatsApp",
+          "title": "Pengumuman Babak Semifinal",
+          "date": "2025-10-20",
         },
         {
-          title: "Babak Final",
-          date: "2025-10-31",
-          location: "Gedung Lab. Riset Multidisiplin FMIPA UI",
+          "title": "Babak Final",
+          "date": "2025-10-31",
         },
         {
-          title: "Pengumuman Babak Final",
-          date: "2025-11-01",
-          location: "Balairung UI",
+          "title": "Closing Ceremony dan Pengumuman Pemenang",
+          "date": "2025-11-01",
         },
       ],
       "Cerdas Cermat": [
         {
-          title: "Technical Meeting",
-          date: "2025-09-02",
-          location: "Zoom Meeting",
+          "title": "Technical Meeting Babak Penyisihan",
+          "date": "2025-09-26",
         },
         {
-          title: "Babak Penyisihan",
-          date: "2025-09-13",
-          location: "Melalui laman Sibiti pada website Pesta Rakyat Fisika XIII",
+          "title": "Babak Penyisihan",
+          "date": "2025-10-11",
         },
         {
-          title: "Pengumuman Babak Penyisihan",
-          date: "2025-10-17",
-          location: "Melalui website Pesta Rakyat Fisika XIII dan Grup WhatsApp",
+          "title": "Pengumuman Babak Penyisihan",
+          "date": "2025-10-17",
         },
         {
-          title: "Babak Semifinal",
-          date: "2025-10-31",
-          location: "Gedung Lab. Riset Multidisiplin FMIPA UI",
+          "title": "Technical Meeting Babak Semifinal dan Final",
+          "date": "2025-10-24",
         },
         {
-          title: "Pengumuman Babak Semifinal",
-          date: "2025-11-01",
-          location: "Balairung UI",
+          "title": "Babak Semifinal",
+          "date": "2025-10-31",
         },
         {
-          title: "Babak Final",
-          date: "2025-11-01",
-          location: "Balairung UI",
+          "title": "Pengumuman Babak Semifinal",
+          "date": "2025-10-31",
         },
         {
-          title: "Pengumuman Pemenang",
-          date: "2025-11-01",
-          location: "Balairung UI",
+          "title": "Babak Final",
+          "date": "2025-11-01",
+        },
+        {
+          "title": "Closing Ceremony dan Pengumuman Pemenang",
+          "date": "2025-11-01",
         },
       ],
       "Lomba Roket Air": [
         {
-          title: "Technical Meeting",
-          date: "2025-09-02",
-          location: "Zoom Meeting",
+          "title": "Technical Meeting",
+          "date": "2025-09-26",
         },
         {
-          title: "Babak Penyisihan",
-          date: "2025-11-01",
-          location: "Balairung UI",
+          "title": "Pelaksanaan Perlombaan",
+          "date": "2025-11-01",
         },
         {
-          title: "Pengumuman Babak Penyisihan",
-          date: "2025-11-01",
-          location: "Balairung UI",
-        },
-        {
-          title: "Babak Peluncuran",
-          date: "2025-11-01",
-          location: "Balairung UI",
-        },
-        {
-          title: "Pengumuman Babak Peluncuran",
-          date: "2025-11-01",
-          location: "Balairung UI",
+          "title": "Closing Ceremony dan Pengumuman Pemenang",
+          "date": "2025-11-01",
         },
       ],
     }
@@ -773,12 +743,12 @@ export function CompetitionDetails({ userData }: CompetitionDetailsProps) {
                                   <p className="text-slate-400 text-sm mt-1">
                                     {displayDate}
                                   </p>
-                                    {'location' in event && event.location && (
+                                    {/* {'location' in event && event.location && (
                                       <div className="flex items-center gap-2 mt-2">
                                         <MapPin className="w-4 h-4 text-slate-500" />
                                         <p className="text-slate-400 text-sm">{event.location}</p>
                                       </div>
-                                    )}
+                                    )} */}
                                 </div>
                               </div>
                             );
