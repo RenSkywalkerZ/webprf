@@ -40,9 +40,19 @@ export function SponsorsSection() {
       logo: "/images/partners/aiesec-logo.png",
       website: "#",
     },
-        {
+    {
       name: "infoeventku_",
       logo: "/images/partners/logo_infoeventku_.png",
+      website: "#",
+    },
+    {
+      name: "HME FPTI UPI",
+      logo: "/images/partners/fpti-upi-logo.png",
+      website: "#",
+    },
+    {
+      name: "Ritma FMIPA UB",
+      logo: "/images/partners/ritma-logo.png",
       website: "#",
     },
   ]
