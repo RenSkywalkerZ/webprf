@@ -52,7 +52,7 @@ export function SponsorsSection() {
     },
     {
       name: "Ritma FMIPA UB",
-      logo: "/images/partners/ritma-logo.png",
+      logo: "/images/partners/logo-ritma.webp",
       website: "#",
     },
   ]
