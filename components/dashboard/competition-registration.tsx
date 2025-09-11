@@ -103,13 +103,13 @@ export function CompetitionRegistration({ userData, onRegisterCompetition }: Com
     "9517aa1c-3d72-4b6d-a30c-0ca4eed9a5b0",
   ];
   const COMPETITION_STARTING_PRICES: { [key: string]: number } = {
-    "b4415647-d77b-40af-81ac-956a49498ff2": 99000, // Physics Competition
-    "3d4e5cca-cf3d-45d7-8849-2a614b82f4d4": 199000, // Scientific Writing
-    "43ec1f50-2102-4a4b-995b-e33e61505b22": 299000, // Science Project
-    "4cbe04f2-222b-4d44-8dd2-25821a66d467": 199000, // Praktikum
-    "9517aa1c-3d72-4b6d-a30c-0ca4eed9a5b0": 199000, // LCC
-    "22270c4a-4f38-40fb-854e-daa58336f0d9": 299000, // Roket Air
-    "331aeb0c-8851-4638-aa34-6502952f098b": 99000,  // Depict Physics
+    "b4415647-d77b-40af-81ac-956a49498ff2": 180000, // Physics Competition
+    "3d4e5cca-cf3d-45d7-8849-2a614b82f4d4": 200000, // Scientific Writing
+    "43ec1f50-2102-4a4b-995b-e33e61505b22": 330000, // Science Project
+    "4cbe04f2-222b-4d44-8dd2-25821a66d467": 280000, // Praktikum
+    "9517aa1c-3d72-4b6d-a30c-0ca4eed9a5b0": 230000, // LCC
+    "22270c4a-4f38-40fb-854e-daa58336f0d9": 360000, // Roket Air
+    "331aeb0c-8851-4638-aa34-6502952f098b": 170000,  // Depict Physics
   };
   const GUIDEBOOK_LINKS: { [key: string]: string } = {
     "b4415647-d77b-40af-81ac-956a49498ff2": "https://tinyurl.com/PhysicsCompetitionGBPRFXIII",
@@ -562,20 +562,6 @@ export function CompetitionRegistration({ userData, onRegisterCompetition }: Com
           </CardContent>
         </Card>
       )}
-
-            <Card className="bg-gradient-to-r from-green-500/10 to-teal-500/10 border-green-500/30">
-        <CardHeader>
-          <CardTitle className="text-white flex items-center gap-2">
-            <PartyPopper className="w-5 h-5 text-green-400" />
-            Harga Spesial 9.9!
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-slate-300">
-            Manfaatkan kesempatan ini untuk mendaftar!
-          </p>
-        </CardContent>
-      </Card>
 
       {!registrationClosed && (
       <Card className="bg-gradient-to-r from-cyan-500/10 to-purple-500/10 border-cyan-500/30">
