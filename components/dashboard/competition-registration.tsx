@@ -287,7 +287,7 @@ export function CompetitionRegistration({ userData, onRegisterCompetition }: Com
   
     try {
       if (registrationClosed) {
-        alert("Pendaftaran sedang ditutup sementara untuk rekapitulasi data.");
+        alert("Pendaftaran sudah ditutup.");
         setIsRedirecting(false); // Sembunyikan loading jika gagal
         return;
       }
@@ -551,13 +551,12 @@ export function CompetitionRegistration({ userData, onRegisterCompetition }: Com
           <CardHeader>
             <CardTitle className="text-white flex items-center gap-2">
               <Clock className="w-5 h-5 text-red-400" />
-              Pendaftaran Ditutup Sementara
+              Pendaftaran Ditutup
             </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-slate-300">
-              Pendaftaran sedang ditutup untuk rekapitulasi data peserta / dalam perbaikan. Silakan tunggu pengumuman pembukaan batch
-              selanjutnya.
+              Terima kasih atas partisipasi Travellers, good luck!
             </p>
           </CardContent>
         </Card>
