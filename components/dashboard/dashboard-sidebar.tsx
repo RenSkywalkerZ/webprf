@@ -1,6 +1,6 @@
 "use client"
 import { useState } from "react"
-import { User, Trophy, FileText, LogOut, Menu, X, Shield, BarChart3, Users, Home, Settings } from "lucide-react"
+import { User, Trophy, FileText, LogOut, Menu, X, Shield, BarChart3, Users, Home, Settings, Upload } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Lock } from "lucide-react"
 import { signOut } from "next-auth/react"
@@ -11,9 +11,16 @@ interface DashboardSidebarProps {
   onSectionChange: (section: string) => void
   userData: any
   profileCompletion: number
+  hasSubmissionAccess: boolean
 }
 
-export function DashboardSidebar({ activeSection, onSectionChange, userData, profileCompletion }: DashboardSidebarProps) {
+export function DashboardSidebar({
+  activeSection,
+  onSectionChange,
+  userData,
+  profileCompletion,
+  hasSubmissionAccess
+}: DashboardSidebarProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   // Admin menu items
@@ -70,7 +77,16 @@ export function DashboardSidebar({ activeSection, onSectionChange, userData, pro
       icon: FileText,
       description: "Detail lomba yang diikuti",
     },
-  ]
+  ];
+
+  if (hasSubmissionAccess) {
+  userMenuItems.push({
+    id: "submissions",
+    label: "Submissions",
+    icon: Upload,
+    description: "Submit your competition entries",
+  });
+}
 
   const menuItems = userData?.role === "admin" ? adminMenuItems : userMenuItems
 
@@ -115,7 +131,7 @@ export function DashboardSidebar({ activeSection, onSectionChange, userData, pro
               const isLocked =
                 userData?.role !== "admin" &&
                 profileCompletion < 100 &&
-                (item.id === "registration" || item.id === "details")
+                (item.id === "registration" || item.id === "details" || item.id === "submissions")
 
               const buttonItem = (
                 <button
@@ -135,11 +151,7 @@ export function DashboardSidebar({ activeSection, onSectionChange, userData, pro
                           : "bg-gradient-to-r from-cyan-500/20 to-purple-600/20 border border-cyan-500/30 text-white"
                         : "text-slate-300 hover:text-white hover:bg-slate-800/50"
                     }
-                    ${
-                      isLocked
-                        ? "cursor-not-allowed opacity-50 filter grayscale"
-                        : ""
-                    }
+                    ${isLocked ? "cursor-not-allowed opacity-50 filter grayscale" : ""}
                   `}
                 >
                   <item.icon className="w-5 h-5 mt-0.5 flex-shrink-0" />
@@ -147,9 +159,7 @@ export function DashboardSidebar({ activeSection, onSectionChange, userData, pro
                     <div className="font-medium">{item.label}</div>
                     <div className="text-xs text-slate-400 mt-1">{item.description}</div>
                   </div>
-                  {isLocked && (
-                    <Lock className="w-4 h-4 text-slate-400 flex-shrink-0" />
-                  )}
+                  {isLocked && <Lock className="w-4 h-4 text-slate-400 flex-shrink-0" />}
                 </button>
               )
 
@@ -158,9 +168,7 @@ export function DashboardSidebar({ activeSection, onSectionChange, userData, pro
                   <Tooltip key={item.id}>
                     <TooltipTrigger asChild>
                       {/* Wrap dengan div karena button dalam keadaan disabled */}
-                      <div className="w-full cursor-not-allowed">
-                        {buttonItem}
-                      </div>
+                      <div className="w-full cursor-not-allowed">{buttonItem}</div>
                     </TooltipTrigger>
                     <TooltipContent side="right" align="center">
                       <p>Lengkapi profil Anda hingga 100% untuk membuka menu ini</p>
@@ -169,11 +177,7 @@ export function DashboardSidebar({ activeSection, onSectionChange, userData, pro
                 )
               }
 
-              return (
-                <div key={item.id}>
-                  {buttonItem}
-                </div>
-              )
+              return <div key={item.id}>{buttonItem}</div>
             })}
           </div>
         </nav>
