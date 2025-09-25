@@ -85,7 +85,7 @@ const COMPETITION_CONFIG: Record<string, Competition> = {
 }
 
 const DECLARATION_TEXT =
-  "Saya yang mengumpulkan dokumen ini dengan sebenarnya menyatakan bahwa karya ilmiah/karya ini Saya susun tanpa tindakan plagiarisme. Jika di kemudian hari ternyata Saya melakukan tindakan plagiarisme, Saya akan bertanggung jawab sepenuhnya dan menerima sanksi yang dijatuhkan."
+  "Saya yang mengumpulkan dokumen ini dengan sebenarnya menyatakan bahwa karya ini Saya susun tanpa tindakan plagiarisme. Jika di kemudian hari ternyata Saya melakukan tindakan plagiarisme, Saya akan bertanggung jawab sepenuhnya dan menerima sanksi yang dijatuhkan."
 
 // Fungsi helper untuk menghitung sisa waktu
 const calculateTimeLeft = (deadline: string) => {
