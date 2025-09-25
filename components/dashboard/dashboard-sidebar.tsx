@@ -211,7 +211,7 @@ export function DashboardSidebar({
 
       {/* Desktop Sidebar */}
       <div className="hidden lg:flex lg:w-80 lg:flex-col lg:fixed lg:inset-y-0 bg-slate-900/95 backdrop-blur-sm border-r border-slate-700">
-        <div className="flex flex-col h-full">
+        <div className="flex flex-col h-full overflow-y-auto">
           {/* Logo */}
           <div className="p-6 border-b border-slate-700">
             <div className="flex items-center space-x-3">

@@ -19,6 +19,9 @@ import {
   AlertTriangle,
   Trophy,
   Loader2,
+  CalendarDays,
+  Timer,
+  Zap
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 
@@ -34,6 +37,8 @@ interface Competition {
   title: string
   allowedTypes: string[]
   accept: string
+  deadline: string
+  description?: string
 }
 
 interface Submission {
@@ -58,23 +63,173 @@ const COMPETITION_CONFIG: Record<string, Competition> = {
     title: "Scientific Writing",
     allowedTypes: ["application/pdf"],
     accept: ".pdf",
+    deadline: "2026-12-15T23:59:59",
+    description: "Submit your research paper or scientific article"
   },
   "43ec1f50-2102-4a4b-995b-e33e61505b22": {
     id: "43ec1f50-2102-4a4b-995b-e33e61505b22",
     title: "Science Project",
     allowedTypes: ["application/pdf"],
     accept: ".pdf",
+    deadline: "2026-12-20T23:59:59",
+    description: "Upload your complete science project documentation"
   },
   "331aeb0c-8851-4638-aa34-6502952f098b": {
     id: "331aeb0c-8851-4638-aa34-6502952f098b",
     title: "Depict Physics",
     allowedTypes: ["image/jpeg", "image/jpg", "image/png"],
     accept: ".jpg,.jpeg,.png",
+    deadline: "2026-12-10T23:59:59",
+    description: "Create visual representation of physics concepts"
   },
 }
 
 const DECLARATION_TEXT =
   "Saya yang mengumpulkan dokumen ini dengan sebenarnya menyatakan bahwa karya ilmiah/karya ini Saya susun tanpa tindakan plagiarisme. Jika di kemudian hari ternyata Saya melakukan tindakan plagiarisme, Saya akan bertanggung jawab sepenuhnya dan menerima sanksi yang dijatuhkan."
+
+// Fungsi helper untuk menghitung sisa waktu
+const calculateTimeLeft = (deadline: string) => {
+  const now = new Date().getTime()
+  const deadlineTime = new Date(deadline).getTime()
+  const difference = deadlineTime - now
+
+  if (difference <= 0) {
+    return { expired: true, days: 0, hours: 0, minutes: 0 }
+  }
+
+  const days = Math.floor(difference / (1000 * 60 * 60 * 24))
+  const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
+  const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60))
+
+  return { expired: false, days, hours, minutes }
+}
+
+// Fungsi untuk mendapatkan style berdasarkan urgency
+const getUrgencyStyle = (days: number) => {
+  if (days <= 1) {
+    return {
+      gradient: "from-red-500 to-orange-500",
+      bgColor: "bg-red-500/10",
+      borderColor: "border-red-500/30",
+      textColor: "text-red-300",
+      icon: Zap
+    }
+  } else if (days <= 3) {
+    return {
+      gradient: "from-orange-500 to-yellow-500",
+      bgColor: "bg-orange-500/10",
+      borderColor: "border-orange-500/30",
+      textColor: "text-orange-300",
+      icon: Timer
+    }
+  } else {
+    return {
+      gradient: "from-blue-500 to-purple-500",
+      bgColor: "bg-blue-500/10",
+      borderColor: "border-blue-500/30",
+      textColor: "text-blue-300",
+      icon: CalendarDays
+    }
+  }
+}
+
+// Component Deadline Reminder Card
+const DeadlineReminderCard = ({ registrations }: { registrations: Registration[] }) => {
+  const [currentTime, setCurrentTime] = useState(new Date())
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date())
+    }, 60000) // Update setiap menit
+
+    return () => clearInterval(timer)
+  }, [])
+
+  const upcomingDeadlines = registrations
+    .map(reg => {
+      const competition = COMPETITION_CONFIG[reg.competition_id]
+      if (!competition) return null
+      
+      const timeLeft = calculateTimeLeft(competition.deadline)
+      return {
+        ...reg,
+        competition,
+        timeLeft,
+        urgencyStyle: getUrgencyStyle(timeLeft.days)
+      }
+    })
+    .filter(item => item && !item.timeLeft.expired)
+    .sort((a, b) => a!.timeLeft.days - b!.timeLeft.days)
+
+  if (upcomingDeadlines.length === 0) return null
+
+  const mostUrgent = upcomingDeadlines[0]!
+  const UrgentIcon = mostUrgent.urgencyStyle.icon
+
+  return (
+    <Card className={`${mostUrgent.urgencyStyle.bgColor} ${mostUrgent.urgencyStyle.borderColor} border-2`}>
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-white">
+          <div className={`p-2 rounded-lg bg-gradient-to-r ${mostUrgent.urgencyStyle.gradient}`}>
+            <UrgentIcon className="w-5 h-5 text-white" />
+          </div>
+          Deadline Reminders
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {upcomingDeadlines.map((item) => {
+          const ItemIcon = item!.urgencyStyle.icon
+          const timeLeft = item!.timeLeft
+          
+          return (
+            <div 
+              key={item!.id} 
+              className={`p-4 rounded-lg ${item!.urgencyStyle.bgColor} ${item!.urgencyStyle.borderColor} border`}
+            >
+              <div className="flex items-start justify-between">
+                <div className="flex items-start gap-3">
+                  <div className={`p-2 rounded-lg bg-gradient-to-r ${item!.urgencyStyle.gradient}`}>
+                    <ItemIcon className="w-4 h-4 text-white" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-white">{item!.competition.title}</h4>
+                    <p className="text-slate-300 text-sm">{item!.competition.description}</p>
+                    <p className="text-slate-400 text-xs mt-1">
+                      Deadline: {new Date(item!.competition.deadline).toLocaleDateString("en-US", {
+                        weekday: "short",
+                        year: "numeric", 
+                        month: "short",
+                        day: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit"
+                      })}
+                    </p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className={`text-lg font-bold ${item!.urgencyStyle.textColor}`}>
+                    {timeLeft.days > 0 && `${timeLeft.days}d `}
+                    {timeLeft.hours}h {timeLeft.minutes}m
+                  </div>
+                  <div className="text-slate-400 text-xs">remaining</div>
+                </div>
+              </div>
+              
+              {timeLeft.days <= 1 && (
+                <div className="mt-3 flex items-center gap-2 p-2 bg-red-500/20 rounded border border-red-500/30">
+                  <Zap className="w-4 h-4 text-red-300" />
+                  <span className="text-red-300 text-sm font-medium">
+                    {timeLeft.days === 0 ? "Due today!" : "Due tomorrow!"}
+                  </span>
+                </div>
+              )}
+            </div>
+          )
+        })}
+      </CardContent>
+    </Card>
+  )
+}
 
 export function Submissions({ userData }: SubmissionsProps) {
   const [registrations, setRegistrations] = useState<Registration[]>([])
@@ -351,6 +506,9 @@ export function Submissions({ userData }: SubmissionsProps) {
         </div>
       </div>
 
+      {/* Deadline Reminder Card */}
+      <DeadlineReminderCard registrations={registrations} />
+
       {/* Competition Cards */}
       {registrations.map((registration) => {
         const competition = COMPETITION_CONFIG[registration.competition_id]
@@ -399,13 +557,13 @@ export function Submissions({ userData }: SubmissionsProps) {
 
                 <div>
                   <Label htmlFor={`desc-${registration.competition_id}`} className="text-white">
-                    Description (Optional)
+                    Description/Judul
                   </Label>
                   <Textarea
                     id={`desc-${registration.competition_id}`}
                     value={state.description || ""}
                     onChange={(e) => handleInputChange(registration.competition_id, "description", e.target.value)}
-                    placeholder="Enter a brief description of your submission..."
+                    placeholder="Babak penyisihan, final, dll. Contoh: 'Babak Penyisihan'"
                     className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500"
                     disabled={state.isUploading}
                   />
@@ -463,8 +621,8 @@ export function Submissions({ userData }: SubmissionsProps) {
                         <TableRow className="border-slate-600">
                           <TableHead className="text-slate-300">Title</TableHead>
                           <TableHead className="text-slate-300">Submitted</TableHead>
-                          <TableHead className="text-slate-300">Status</TableHead>
                           <TableHead className="text-slate-300">Actions</TableHead>
+                          <TableHead className="text-slate-300">Delete</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -506,43 +664,43 @@ export function Submissions({ userData }: SubmissionsProps) {
                                   </Button>
                                 </div>
                               </TableCell>
-                                <TableCell>
-                                    <Button
-  size="sm"
-  variant="outline"
-  onClick={async () => {
-    if (!confirm("Are you sure you want to delete this submission?")) return;
-    try {
-      const res = await fetch(`/api/submissions/${submission.id}`, {
-        method: "DELETE",
-      });
-      if (res.ok) {
-        toast({
-          title: "Deleted",
-          description: "Your submission has been removed.",
-        });
-        fetchData();
-      } else {
-        toast({
-          title: "Error",
-          description: "Failed to delete submission",
-          variant: "destructive",
-        });
-      }
-    } catch (err) {
-      console.error("Delete error", err);
-      toast({
-        title: "Error",
-        description: "Something went wrong",
-        variant: "destructive",
-      });
-    }
-  }}
-  className="border-slate-600 text-red-400 hover:bg-red-600/20"
->
-  ✕
-</Button>
-                                </TableCell>
+                              <TableCell>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={async () => {
+                                    if (!confirm("Are you sure you want to delete this submission?")) return;
+                                    try {
+                                      const res = await fetch(`/api/submissions/${submission.id}`, {
+                                        method: "DELETE",
+                                      });
+                                      if (res.ok) {
+                                        toast({
+                                          title: "Deleted",
+                                          description: "Your submission has been removed.",
+                                        });
+                                        fetchData();
+                                      } else {
+                                        toast({
+                                          title: "Error",
+                                          description: "Failed to delete submission",
+                                          variant: "destructive",
+                                        });
+                                      }
+                                    } catch (err) {
+                                      console.error("Delete error", err);
+                                      toast({
+                                        title: "Error",
+                                        description: "Something went wrong",
+                                        variant: "destructive",
+                                      });
+                                    }
+                                  }}
+                                  className="border-slate-600 text-red-400 hover:bg-red-600/20"
+                                >
+                                  ✕
+                                </Button>
+                              </TableCell>
                             </TableRow>
                           )
                         })}
