@@ -10,6 +10,7 @@ import { AdminPanel } from './admin-panel';
 import { BatchPricingManagement } from './batch-pricing-management';
 import { UserDashboard } from './user-dashboard';
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
+import { Submissions } from '../Submissions';
 
 interface DashboardProps {
   userData: any;
@@ -192,11 +193,27 @@ const handleCancelNavigation = () => {
         return <AdminPanel userData={initialUserData} />;
       case 'batch-pricing-management':
         return <BatchPricingManagement userData={initialUserData} />;
+      case 'submissions':
+        return <Submissions userData={initialUserData} />;
       case 'user-overview':
       default:
         return <UserDashboard userData={initialUserData} />;
     }
   };
+
+  // Lomba yang wajib ada submisi
+const submissionCompetitions = [
+  "3d4e5cca-cf3d-45d7-8849-2a614b82f4d4", // Scientific Writing
+  "43ec1f50-2102-4a4b-995b-e33e61505b22", // Science Project
+  "331aeb0c-8851-4638-aa34-6502952f098b", // Depict Physics
+];
+
+const hasSubmissionAccess = registrations.some(
+  (reg: any) =>
+    reg.status === "approved" &&
+    submissionCompetitions.includes(reg.competition_id)
+);
+
 
   return (
     <div className="min-h-screen bg-black">
@@ -206,6 +223,7 @@ const handleCancelNavigation = () => {
         onSectionChange={handleSectionChange}
         userData={initialUserData}
         profileCompletion={profileCompletion} // Prop baru ditambahkan di sini
+        hasSubmissionAccess={hasSubmissionAccess}
       />
       <div className="lg:pl-80">
         <main className="p-6">{renderContent()}</main>
