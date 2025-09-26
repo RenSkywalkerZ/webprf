@@ -63,24 +63,24 @@ const COMPETITION_CONFIG: Record<string, Competition> = {
     title: "Scientific Writing",
     allowedTypes: ["application/pdf"],
     accept: ".pdf",
-    deadline: "2026-12-15T23:59:59",
-    description: "Submit your research paper or scientific article"
+    deadline: "2025-09-29T23:59:59",
+    description: "Babak Penyisihan"
   },
   "43ec1f50-2102-4a4b-995b-e33e61505b22": {
     id: "43ec1f50-2102-4a4b-995b-e33e61505b22",
     title: "Science Project",
     allowedTypes: ["application/pdf"],
     accept: ".pdf",
-    deadline: "2026-12-20T23:59:59",
-    description: "Upload your complete science project documentation"
+    deadline: "2025-09-30T23:59:59",
+    description: "Babak Penyisihan"
   },
   "331aeb0c-8851-4638-aa34-6502952f098b": {
     id: "331aeb0c-8851-4638-aa34-6502952f098b",
     title: "Depict Physics",
     allowedTypes: ["image/jpeg", "image/jpg", "image/png"],
     accept: ".jpg,.jpeg,.png",
-    deadline: "2026-12-10T23:59:59",
-    description: "Create visual representation of physics concepts"
+    deadline: "2025-09-30T23:59:59",
+    description: "Babak Penyisihan"
   },
 }
 
