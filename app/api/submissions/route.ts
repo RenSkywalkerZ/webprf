@@ -47,6 +47,7 @@ export async function POST(req: Request) {
     const competitionId = formData.get("competition_id") as string
     const description = formData.get("description") as string
     const declarationChecked = formData.get("declaration_checked") as string
+    const submissionType = formData.get("submission_type") as string || "karya" // Default to "karya"
 
     // Validate fields
     if (!file || !competitionId || declarationChecked !== "true") {
@@ -57,7 +58,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "File size must be < 10MB" }, { status: 400 })
     }
 
-    const validTypes = ALLOWED_TYPES[competitionId]
+    // For surat_pernyataan, always allow PDF
+    const validTypes = submissionType === "surat_pernyataan" 
+      ? ["application/pdf"] 
+      : ALLOWED_TYPES[competitionId]
+      
     if (!validTypes || !validTypes.includes(file.type)) {
       return NextResponse.json({ error: "Invalid file type" }, { status: 400 })
     }
@@ -96,9 +101,14 @@ export async function POST(req: Request) {
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
 
-    // Buat struktur folder Cloudinary
-    const folder = `${process.env.CLOUDINARY_UPLOAD_FOLDER}/${competitionName}/${userName}`
-    const publicId = file.name.replace(/\s+/g, "_")
+    // Buat struktur folder Cloudinary dengan subfolder berdasarkan submission type
+    const subFolder = submissionType === "surat_pernyataan" ? "surat-pernyataan" : "karya"
+    const folder = `${process.env.CLOUDINARY_UPLOAD_FOLDER}/${competitionName}/${userName}/${subFolder}`
+    
+    // Buat public_id yang unik dengan timestamp
+    const timestamp = Date.now()
+    const fileName = file.name.replace(/\s+/g, "_").replace(/[^a-zA-Z0-9._-]/g, "")
+    const publicId = `${submissionType}_${timestamp}_${fileName}`
 
     // Upload ke Cloudinary
     const uploadResult: any = await new Promise((resolve, reject) => {
@@ -107,7 +117,7 @@ export async function POST(req: Request) {
           folder,
           resource_type: "auto",
           public_id: publicId,
-          overwrite: true, // biar bisa replace kalau nama sama
+          overwrite: true,
         },
         (err, res) => {
           if (err) reject(err)
@@ -117,7 +127,7 @@ export async function POST(req: Request) {
       stream.end(buffer)
     })
 
-    // Simpan metadata ke DB (tanpa status)
+    // Simpan metadata ke DB
     const { data: submission, error: dbError } = await supabaseAdmin
       .from("submissions")
       .insert({
@@ -130,6 +140,7 @@ export async function POST(req: Request) {
         mime_type: file.type,
         size_bytes: file.size,
         title: description || null,
+        submission_type: submissionType,
         declaration_accepted: true,
       })
       .select()
@@ -137,7 +148,7 @@ export async function POST(req: Request) {
 
     if (dbError) {
       // Cleanup kalau gagal save DB
-      await cloudinary.uploader.destroy(uploadResult.public_id)
+      await cloudinary.uploader.destroy(uploadResult.public_id, { resource_type: "auto" })
       throw dbError
     }
 

@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Separator } from "@/components/ui/separator"
 import {
   Upload,
   FileText,
@@ -21,7 +22,8 @@ import {
   Loader2,
   CalendarDays,
   Timer,
-  Zap
+  Zap,
+  FileCheck
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 
@@ -44,13 +46,14 @@ interface Competition {
 interface Submission {
   id: string
   title?: string
-  created_at: string   // pakai ini, bukan submitted_at
+  created_at: string
   file_url: string
   competition_id: string
   original_filename: string
   file_public_id?: string
   mime_type?: string
   size_bytes?: number
+  submission_type?: 'karya' | 'surat_pernyataan'  // Tambahan untuk membedakan jenis submission
 }
 
 interface SubmissionsProps {
@@ -239,10 +242,15 @@ export function Submissions({ userData }: SubmissionsProps) {
     Record<
       string,
       {
+        // Upload karya utama
         file: File | null
         description: string
+        // Upload surat pernyataan
+        declarationFile: File | null
+        declarationDescription: string
         declarationChecked: boolean
         isUploading: boolean
+        isUploadingDeclaration: boolean
       }
     >
   >({})
@@ -273,8 +281,11 @@ export function Submissions({ userData }: SubmissionsProps) {
           initialStates[reg.competition_id] = {
             file: null,
             description: "",
+            declarationFile: null,
+            declarationDescription: "Surat Pernyataan Orisinalitas",
             declarationChecked: false,
             isUploading: false,
+            isUploadingDeclaration: false,
           }
         })
         setUploadStates(initialStates)
@@ -308,20 +319,23 @@ export function Submissions({ userData }: SubmissionsProps) {
     }
   }
 
-  const handleFileChange = (competitionId: string, file: File | null) => {
+  const handleFileChange = (competitionId: string, file: File | null, type: 'main' | 'declaration' = 'main') => {
     if (file) {
       const competition = COMPETITION_CONFIG[competitionId]
-      if (!competition.allowedTypes.includes(file.type)) {
+      // Untuk surat pernyataan, selalu PDF
+      const allowedTypes = type === 'declaration' ? ['application/pdf'] : competition.allowedTypes
+      const accept = type === 'declaration' ? '.pdf' : competition.accept
+      
+      if (!allowedTypes.includes(file.type)) {
         toast({
           title: "Invalid File Type",
-          description: `Only ${competition.accept} files are allowed for ${competition.title}`,
+          description: `Only ${accept} files are allowed for ${type === 'declaration' ? 'surat pernyataan' : competition.title}`,
           variant: "destructive",
         })
         return
       }
 
       if (file.size > 10 * 1024 * 1024) {
-        // 10MB limit
         toast({
           title: "File Too Large",
           description: "File size must be less than 10MB",
@@ -331,11 +345,12 @@ export function Submissions({ userData }: SubmissionsProps) {
       }
     }
 
+    const fieldName = type === 'declaration' ? 'declarationFile' : 'file'
     setUploadStates((prev) => ({
       ...prev,
       [competitionId]: {
         ...prev[competitionId],
-        file,
+        [fieldName]: file,
       },
     }))
   }
@@ -350,24 +365,30 @@ export function Submissions({ userData }: SubmissionsProps) {
     }))
   }
 
-  const handleSubmit = async (competitionId: string) => {
+  const handleSubmit = async (competitionId: string, type: 'main' | 'declaration' = 'main') => {
     const state = uploadStates[competitionId]
-    if (!state.file || !state.declarationChecked) return
+    const file = type === 'declaration' ? state.declarationFile : state.file
+    const description = type === 'declaration' ? state.declarationDescription : state.description
+    
+    if (!file) return
+    if (type === 'main' && !state.declarationChecked) return
 
+    const uploadingField = type === 'declaration' ? 'isUploadingDeclaration' : 'isUploading'
+    
     setUploadStates((prev) => ({
       ...prev,
       [competitionId]: {
         ...prev[competitionId],
-        isUploading: true,
+        [uploadingField]: true,
       },
     }))
 
     try {
-      // Upload file to Supabase Storage (adapting from existing payment upload pattern)
       const formData = new FormData()
-      formData.append("file", state.file)
+      formData.append("file", file)
       formData.append("competition_id", competitionId)
-      formData.append("description", state.description)
+      formData.append("description", description)
+      formData.append("submission_type", type === 'declaration' ? 'surat_pernyataan' : 'karya')
       formData.append("declaration_checked", "true")
 
       const response = await fetch("/api/submissions", {
@@ -380,17 +401,19 @@ export function Submissions({ userData }: SubmissionsProps) {
       if (response.ok) {
         toast({
           title: "Submission Successful!",
-          description: "Your submission has been uploaded successfully.",
+          description: `Your ${type === 'declaration' ? 'surat pernyataan' : 'karya'} has been uploaded successfully.`,
         })
 
         // Reset form
+        const resetFields = type === 'declaration' 
+          ? { declarationFile: null, declarationDescription: "Surat Pernyataan Orisinalitas", isUploadingDeclaration: false }
+          : { file: null, description: "", declarationChecked: false, isUploading: false }
+          
         setUploadStates((prev) => ({
           ...prev,
           [competitionId]: {
-            file: null,
-            description: "",
-            declarationChecked: false,
-            isUploading: false,
+            ...prev[competitionId],
+            ...resetFields,
           },
         }))
 
@@ -411,22 +434,41 @@ export function Submissions({ userData }: SubmissionsProps) {
         ...prev,
         [competitionId]: {
           ...prev[competitionId],
-          isUploading: false,
+          [uploadingField]: false,
         },
       }))
     }
   }
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "approved":
-        return { text: "Approved", color: "bg-green-500/20 text-green-300 border-green-500/30", icon: CheckCircle }
-      case "pending":
-        return { text: "Under Review", color: "bg-yellow-500/20 text-yellow-300 border-yellow-500/30", icon: Clock }
-      case "rejected":
-        return { text: "Rejected", color: "bg-red-500/20 text-red-300 border-red-500/30", icon: AlertTriangle }
-      default:
-        return { text: "Unknown", color: "bg-gray-500/20 text-gray-300 border-gray-500/30", icon: Clock }
+  const handleDelete = async (submission: Submission) => {
+    if (!confirm("Are you sure you want to delete this submission?")) return
+    
+    try {
+      const res = await fetch(`/api/submissions/${submission.id}`, {
+        method: "DELETE",
+      })
+      
+      if (res.ok) {
+        toast({
+          title: "Deleted",
+          description: "Your submission has been removed.",
+        })
+        fetchData()
+      } else {
+        const errorData = await res.json()
+        toast({
+          title: "Error",
+          description: errorData.error || "Failed to delete submission",
+          variant: "destructive",
+        })
+      }
+    } catch (err) {
+      console.error("Delete error", err)
+      toast({
+        title: "Error",
+        description: "Something went wrong",
+        variant: "destructive",
+      })
     }
   }
 
@@ -516,6 +558,16 @@ export function Submissions({ userData }: SubmissionsProps) {
         const competitionSubmissions = submissions[registration.competition_id] || []
         const isPdf = competition.allowedTypes.includes("application/pdf")
 
+        // Separate submissions by type
+        const karyaSubmissions = competitionSubmissions.filter(s => 
+          !s.submission_type || s.submission_type === 'karya' || 
+          (s.title && !s.title.toLowerCase().includes('surat pernyataan'))
+        )
+        const declarationSubmissions = competitionSubmissions.filter(s => 
+          s.submission_type === 'surat_pernyataan' || 
+          (s.title && s.title.toLowerCase().includes('surat pernyataan'))
+        )
+
         return (
           <Card key={registration.competition_id} className="bg-slate-900/50 border-slate-700">
             <CardHeader>
@@ -531,22 +583,31 @@ export function Submissions({ userData }: SubmissionsProps) {
                 <Badge className="bg-blue-500/20 text-blue-300 border-blue-500/30">
                   {competition.title}
                 </Badge>
-                <span className="text-slate-400">Upload {isPdf ? "PDF document" : "image file"}</span>
+                <span className="text-slate-400">Upload karya dan surat pernyataan orisinalitas</span>
               </CardDescription>
             </CardHeader>
 
             <CardContent className="space-y-6">
-              {/* Submission Form */}
+              {/* Section 1: Upload Karya Utama */}
               <div className="space-y-4">
+                <div className="flex items-center gap-2 mb-4">
+                  {isPdf ? (
+                    <FileText className="w-5 h-5 text-blue-400" />
+                  ) : (
+                    <ImageIcon className="w-5 h-5 text-green-400" />
+                  )}
+                  <h3 className="text-white font-semibold text-lg">Upload Karya Utama</h3>
+                </div>
+
                 <div>
                   <Label htmlFor={`file-${registration.competition_id}`} className="text-white">
-                    File Upload <span className="text-red-500">*</span>
+                    File Karya <span className="text-red-500">*</span>
                   </Label>
                   <Input
                     id={`file-${registration.competition_id}`}
                     type="file"
                     accept={competition.accept}
-                    onChange={(e) => handleFileChange(registration.competition_id, e.target.files?.[0] || null)}
+                    onChange={(e) => handleFileChange(registration.competition_id, e.target.files?.[0] || null, 'main')}
                     className="bg-slate-800 border-slate-700 text-white file:bg-slate-700 file:text-white file:border-0 file:mr-4 file:py-2 file:px-4 file:rounded-md"
                     disabled={state.isUploading}
                   />
@@ -557,13 +618,13 @@ export function Submissions({ userData }: SubmissionsProps) {
 
                 <div>
                   <Label htmlFor={`desc-${registration.competition_id}`} className="text-white">
-                    Description/Judul
+                    Deskripsi Karya
                   </Label>
                   <Textarea
                     id={`desc-${registration.competition_id}`}
                     value={state.description || ""}
                     onChange={(e) => handleInputChange(registration.competition_id, "description", e.target.value)}
-                    placeholder="Babak penyisihan, final, dll. Contoh: 'Babak Penyisihan' atau Surat Pernyataan Orisinalitas"
+                    placeholder="Contoh: 'Karya Babak Penyisihan Scientific Writing'"
                     className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500"
                     disabled={state.isUploading}
                   />
@@ -593,41 +654,125 @@ export function Submissions({ userData }: SubmissionsProps) {
                 </div>
 
                 <Button
-                  onClick={() => handleSubmit(registration.competition_id)}
+                  onClick={() => handleSubmit(registration.competition_id, 'main')}
                   disabled={!state.file || !state.declarationChecked || state.isUploading}
                   className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
                 >
                   {state.isUploading ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Uploading...
+                      Uploading Karya...
                     </>
                   ) : (
                     <>
                       <Upload className="w-4 h-4 mr-2" />
-                      Submit Entry
+                      Submit Karya
                     </>
                   )}
                 </Button>
               </div>
 
-              {/* My Submissions Table */}
-              <div>
-                <h3 className="text-white font-semibold mb-3">My Submissions</h3>
-                {competitionSubmissions.length > 0 ? (
-                  <div className="bg-slate-800/50 rounded-lg border border-slate-600">
-                    <Table>
-                      <TableHeader>
-                        <TableRow className="border-slate-600">
-                          <TableHead className="text-slate-300">Title</TableHead>
-                          <TableHead className="text-slate-300">Submitted</TableHead>
-                          <TableHead className="text-slate-300">Actions</TableHead>
-                          <TableHead className="text-slate-300">Delete</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {competitionSubmissions.map((submission) => {
-                          return (
+              <Separator className="bg-slate-600" />
+
+              {/* Section 2: Upload Surat Pernyataan */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 mb-4">
+                  <FileCheck className="w-5 h-5 text-green-400" />
+                  <h3 className="text-white font-semibold text-lg">Upload Surat Pernyataan Orisinalitas</h3>
+                </div>
+
+                <div>
+                  <Label htmlFor={`declaration-file-${registration.competition_id}`} className="text-white">
+                    File Surat Pernyataan <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    id={`declaration-file-${registration.competition_id}`}
+                    type="file"
+                    accept=".pdf"
+                    onChange={(e) => handleFileChange(registration.competition_id, e.target.files?.[0] || null, 'declaration')}
+                    className="bg-slate-800 border-slate-700 text-white file:bg-slate-700 file:text-white file:border-0 file:mr-4 file:py-2 file:px-4 file:rounded-md"
+                    disabled={state.isUploadingDeclaration}
+                  />
+                  <p className="text-slate-400 text-sm mt-1">
+                    PDF files only, max 10MB - Surat pernyataan orisinalitas yang sudah ditandatangani
+                  </p>
+                </div>
+
+                <div>
+                  <Label htmlFor={`declaration-desc-${registration.competition_id}`} className="text-white">
+                    Deskripsi Surat Pernyataan
+                  </Label>
+                  <Input
+                    id={`declaration-desc-${registration.competition_id}`}
+                    value={state.declarationDescription || ""}
+                    onChange={(e) => handleInputChange(registration.competition_id, "declarationDescription", e.target.value)}
+                    placeholder="Surat Pernyataan Orisinalitas"
+                    className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500"
+                    disabled={state.isUploadingDeclaration}
+                  />
+                </div>
+
+                <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-4">
+                  <div className="flex items-start space-x-3">
+                    <FileCheck className="w-5 h-5 text-green-400 mt-0.5" />
+                    <div className="space-y-1">
+                      <p className="text-green-200 font-medium text-sm">Informasi Surat Pernyataan</p>
+                      <p className="text-green-100 text-sm leading-relaxed">
+                        Surat pernyataan orisinalitas harus berisi pernyataan bahwa karya yang disubmit adalah hasil karya sendiri 
+                        dan bebas dari plagiarisme. Surat harus ditandatangani dan di-scan dalam format PDF.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <Button
+                  onClick={() => handleSubmit(registration.competition_id, 'declaration')}
+                  disabled={!state.declarationFile || state.isUploadingDeclaration}
+                  className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white"
+                >
+                  {state.isUploadingDeclaration ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Uploading Surat Pernyataan...
+                    </>
+                  ) : (
+                    <>
+                      <FileCheck className="w-4 h-4 mr-2" />
+                      Submit Surat Pernyataan
+                    </>
+                  )}
+                </Button>
+              </div>
+
+              <Separator className="bg-slate-600" />
+
+              {/* My Submissions Tables */}
+              <div className="space-y-6">
+                <h3 className="text-white font-semibold text-lg">My Submissions</h3>
+                
+                {/* Karya Submissions */}
+                <div>
+                  <h4 className="text-white font-medium mb-3 flex items-center gap-2">
+                    {isPdf ? (
+                      <FileText className="w-4 h-4 text-blue-400" />
+                    ) : (
+                      <ImageIcon className="w-4 h-4 text-green-400" />
+                    )}
+                    Karya Utama
+                  </h4>
+                  {karyaSubmissions.length > 0 ? (
+                    <div className="bg-slate-800/50 rounded-lg border border-slate-600">
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="border-slate-600">
+                            <TableHead className="text-slate-300">Title</TableHead>
+                            <TableHead className="text-slate-300">Submitted</TableHead>
+                            <TableHead className="text-slate-300">Actions</TableHead>
+                            <TableHead className="text-slate-300">Delete</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {karyaSubmissions.map((submission) => (
                             <TableRow key={submission.id} className="border-slate-600">
                               <TableCell className="text-white">{submission.title || "No description"}</TableCell>
                               <TableCell className="text-slate-300">
@@ -654,7 +799,7 @@ export function Submissions({ userData }: SubmissionsProps) {
                                     onClick={() => {
                                       const link = document.createElement("a")
                                       link.href = submission.file_url
-                                      link.download = submission.original_filename || `${competition.title}_submission_${submission.id}`
+                                      link.download = submission.original_filename || `${competition.title}_karya_${submission.id}`
                                       link.click()
                                     }}
                                     className="border-slate-600 text-slate-300 hover:bg-slate-700"
@@ -668,51 +813,102 @@ export function Submissions({ userData }: SubmissionsProps) {
                                 <Button
                                   size="sm"
                                   variant="outline"
-                                  onClick={async () => {
-                                    if (!confirm("Are you sure you want to delete this submission?")) return;
-                                    try {
-                                      const res = await fetch(`/api/submissions/${submission.id}`, {
-                                        method: "DELETE",
-                                      });
-                                      if (res.ok) {
-                                        toast({
-                                          title: "Deleted",
-                                          description: "Your submission has been removed.",
-                                        });
-                                        fetchData();
-                                      } else {
-                                        toast({
-                                          title: "Error",
-                                          description: "Failed to delete submission",
-                                          variant: "destructive",
-                                        });
-                                      }
-                                    } catch (err) {
-                                      console.error("Delete error", err);
-                                      toast({
-                                        title: "Error",
-                                        description: "Something went wrong",
-                                        variant: "destructive",
-                                      });
-                                    }
-                                  }}
+                                  onClick={() => handleDelete(submission)}
                                   className="border-slate-600 text-red-400 hover:bg-red-600/20"
                                 >
                                   ✕
                                 </Button>
                               </TableCell>
                             </TableRow>
-                          )
-                        })}
-                      </TableBody>
-                    </Table>
-                  </div>
-                ) : (
-                  <div className="bg-slate-800/30 rounded-lg border border-slate-600 p-8 text-center">
-                    <FileText className="w-12 h-12 mx-auto mb-3 text-slate-600" />
-                    <p className="text-slate-400 text-sm">No submissions yet for this competition</p>
-                  </div>
-                )}
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  ) : (
+                    <div className="bg-slate-800/30 rounded-lg border border-slate-600 p-6 text-center">
+                      <FileText className="w-10 h-10 mx-auto mb-2 text-slate-600" />
+                      <p className="text-slate-400 text-sm">No karya submissions yet</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Declaration Submissions */}
+                <div>
+                  <h4 className="text-white font-medium mb-3 flex items-center gap-2">
+                    <FileCheck className="w-4 h-4 text-green-400" />
+                    Surat Pernyataan Orisinalitas
+                  </h4>
+                  {declarationSubmissions.length > 0 ? (
+                    <div className="bg-slate-800/50 rounded-lg border border-slate-600">
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="border-slate-600">
+                            <TableHead className="text-slate-300">Title</TableHead>
+                            <TableHead className="text-slate-300">Submitted</TableHead>
+                            <TableHead className="text-slate-300">Actions</TableHead>
+                            <TableHead className="text-slate-300">Delete</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {declarationSubmissions.map((submission) => (
+                            <TableRow key={submission.id} className="border-slate-600">
+                              <TableCell className="text-white">{submission.title || "Surat Pernyataan Orisinalitas"}</TableCell>
+                              <TableCell className="text-slate-300">
+                                {new Date(submission.created_at).toLocaleDateString("en-US", {
+                                  year: "numeric",
+                                  month: "short",
+                                  day: "numeric",
+                                })}
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex items-center gap-2">
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => window.open(submission.file_url, "_blank")}
+                                    className="border-slate-600 text-slate-300 hover:bg-slate-700"
+                                  >
+                                    <Eye className="w-3 h-3 mr-1" />
+                                    View
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => {
+                                      const link = document.createElement("a")
+                                      link.href = submission.file_url
+                                      link.download = submission.original_filename || `${competition.title}_surat_pernyataan_${submission.id}`
+                                      link.click()
+                                    }}
+                                    className="border-slate-600 text-slate-300 hover:bg-slate-700"
+                                  >
+                                    <Download className="w-3 h-3 mr-1" />
+                                    Download
+                                  </Button>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleDelete(submission)}
+                                  className="border-slate-600 text-red-400 hover:bg-red-600/20"
+                                >
+                                  ✕
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  ) : (
+                    <div className="bg-slate-800/30 rounded-lg border border-slate-600 p-6 text-center">
+                      <FileCheck className="w-10 h-10 mx-auto mb-2 text-slate-600" />
+                      <p className="text-slate-400 text-sm">No surat pernyataan submissions yet</p>
+                    </div>
+                  )}
+                </div>
               </div>
             </CardContent>
           </Card>
