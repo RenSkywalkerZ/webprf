@@ -440,7 +440,7 @@ export function Submissions({ userData }: SubmissionsProps) {
             </div>
             <div>
               <h1 className="text-3xl font-bold text-white">Submissions</h1>
-              <p className="text-slate-400">Loading your competition submissions...</p>
+              <p className="text-slate-400">Loading...</p>
             </div>
           </div>
         </div>
@@ -471,8 +471,8 @@ export function Submissions({ userData }: SubmissionsProps) {
               <Upload className="w-8 h-8 text-white" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-white">Submissions</h1>
-              <p className="text-slate-400">Submit your competition entries</p>
+              <h1 className="text-3xl font-bold text-white">Babak Penyisihan</h1>
+              <p className="text-slate-400">Submit karya dan surat pernyataan orisinalitas</p>
             </div>
           </div>
         </div>
@@ -500,8 +500,8 @@ export function Submissions({ userData }: SubmissionsProps) {
             <Upload className="w-8 h-8 text-white" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-white">Submissions</h1>
-            <p className="text-slate-400">Submit your competition entries</p>
+            <h1 className="text-3xl font-bold text-white">Babak Penyisihan</h1>
+            <p className="text-slate-400">Submit karya dan surat pernyataan orisinalitas</p>
           </div>
         </div>
       </div>
@@ -563,7 +563,7 @@ export function Submissions({ userData }: SubmissionsProps) {
                     id={`desc-${registration.competition_id}`}
                     value={state.description || ""}
                     onChange={(e) => handleInputChange(registration.competition_id, "description", e.target.value)}
-                    placeholder="Babak penyisihan, final, dll. Contoh: 'Babak Penyisihan'"
+                    placeholder="Babak penyisihan, final, dll. Contoh: 'Babak Penyisihan' atau Surat Pernyataan Orisinalitas"
                     className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500"
                     disabled={state.isUploading}
                   />
