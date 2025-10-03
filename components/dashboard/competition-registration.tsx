@@ -668,7 +668,7 @@ export function CompetitionRegistration({ userData, onRegisterCompetition }: Com
                 Info Pendaftaran
               </Button>
             </a>
-            <a href="https://forms.gle/bnKV3fE5QJuqJNuZ9" target="_blank" rel="noopener noreferrer">
+            <a href="https://docs.google.com/forms/d/e/1FAIpQLSc-xGZTeHv4P0SkmgUE1Zs15GWQlCWnZzfgBYbza9KgYIG2VQ/viewform?usp=pp_url&entry.1951510600=RBTPRF13" target="_blank" rel="noopener noreferrer">
               <Button variant="outline" className="border-purple-500/30 bg-purple-500/20 text-purple-300 hover:bg-purple-500/30 w-full sm:w-auto">
                 <FilePenLine className="w-4 h-4 mr-2" />
                 Form Pendaftaran
