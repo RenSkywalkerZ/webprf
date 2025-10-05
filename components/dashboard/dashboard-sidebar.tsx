@@ -82,9 +82,9 @@ export function DashboardSidebar({
   if (hasSubmissionAccess) {
   userMenuItems.push({
     id: "submissions",
-    label: "Babak Penyisihan",
+    label: "Submisi",
     icon: Upload,
-    description: "Tempat pengumpulan karya",
+    description: "Tempat Submisi",
   });
 }
 
