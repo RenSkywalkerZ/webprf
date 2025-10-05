@@ -5,12 +5,21 @@ import { supabaseAdmin } from "@/lib/supabase"
 import cloudinary from "@/lib/cloudinary"
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10 MB
+const MAX_DESCRIPTION_LENGTH = 500 // characters
+const MAX_DECLARATION_DESC_LENGTH = 200 // characters
 
 // Allowed file types per competition
 const ALLOWED_TYPES: Record<string, string[]> = {
   "3d4e5cca-cf3d-45d7-8849-2a614b82f4d4": ["application/pdf"], // Scientific Writing
   "43ec1f50-2102-4a4b-995b-e33e61505b22": ["application/pdf"], // Science Project
   "331aeb0c-8851-4638-aa34-6502952f098b": ["image/jpeg", "image/jpg", "image/png"], // Depict Physics
+}
+
+// Competition deadlines
+const COMPETITION_DEADLINES: Record<string, string> = {
+  "3d4e5cca-cf3d-45d7-8849-2a614b82f4d4": "2025-09-29T23:59:59",
+  "43ec1f50-2102-4a4b-995b-e33e61505b22": "2025-09-30T23:59:59",
+  "331aeb0c-8851-4638-aa34-6502952f098b": "2025-09-30T23:59:59",
 }
 
 export async function GET() {
@@ -52,6 +61,23 @@ export async function POST(req: Request) {
     // Validate fields
     if (!file || !competitionId || declarationChecked !== "true") {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
+    }
+
+    // Check deadline
+    const deadline = COMPETITION_DEADLINES[competitionId]
+    if (deadline && new Date() > new Date(deadline)) {
+      return NextResponse.json({ error: "Submission deadline has passed" }, { status: 403 })
+    }
+
+    // Validate description length
+    const maxDescLength = submissionType === "surat_pernyataan" 
+      ? MAX_DECLARATION_DESC_LENGTH 
+      : MAX_DESCRIPTION_LENGTH
+    
+    if (description && description.length > maxDescLength) {
+      return NextResponse.json({ 
+        error: `Description too long. Maximum ${maxDescLength} characters allowed.` 
+      }, { status: 400 })
     }
 
     if (file.size > MAX_FILE_SIZE) {

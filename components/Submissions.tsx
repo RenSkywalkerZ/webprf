@@ -90,6 +90,10 @@ const COMPETITION_CONFIG: Record<string, Competition> = {
 const DECLARATION_TEXT =
   "Saya yang mengumpulkan dokumen ini dengan sebenarnya menyatakan bahwa karya ini Saya susun tanpa tindakan plagiarisme. Jika di kemudian hari ternyata Saya melakukan tindakan plagiarisme, Saya akan bertanggung jawab sepenuhnya dan menerima sanksi yang dijatuhkan."
 
+// Validation constants
+const MAX_DESCRIPTION_LENGTH = 100 // characters
+const MAX_DECLARATION_DESC_LENGTH = 100 // characters
+
 // Fungsi helper untuk menghitung sisa waktu
 const calculateTimeLeft = (deadline: string) => {
   const now = new Date().getTime()
@@ -105,6 +109,11 @@ const calculateTimeLeft = (deadline: string) => {
   const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60))
 
   return { expired: false, days, hours, minutes }
+}
+
+// Fungsi untuk mengecek apakah deadline sudah lewat
+const isDeadlinePassed = (deadline: string) => {
+  return new Date().getTime() > new Date(deadline).getTime()
 }
 
 // Fungsi untuk mendapatkan style berdasarkan urgency
@@ -373,6 +382,28 @@ export function Submissions({ userData }: SubmissionsProps) {
     if (!file) return
     if (type === 'main' && !state.declarationChecked) return
 
+    // Check deadline
+    const competition = COMPETITION_CONFIG[competitionId]
+    if (isDeadlinePassed(competition.deadline)) {
+      toast({
+        title: "Deadline Passed",
+        description: "Submission period has ended for this competition",
+        variant: "destructive",
+      })
+      return
+    }
+
+    // Validate description length
+    const maxLength = type === 'declaration' ? MAX_DECLARATION_DESC_LENGTH : MAX_DESCRIPTION_LENGTH
+    if (description && description.length > maxLength) {
+      toast({
+        title: "Description Too Long",
+        description: `Description must be ${maxLength} characters or less. Current: ${description.length}`,
+        variant: "destructive",
+      })
+      return
+    }
+
     const uploadingField = type === 'declaration' ? 'isUploadingDeclaration' : 'isUploading'
     
     setUploadStates((prev) => ({
@@ -557,6 +588,8 @@ export function Submissions({ userData }: SubmissionsProps) {
         const state = uploadStates[registration.competition_id] || {}
         const competitionSubmissions = submissions[registration.competition_id] || []
         const isPdf = competition.allowedTypes.includes("application/pdf")
+        const deadlinePassed = isDeadlinePassed(competition.deadline)
+        const timeLeft = calculateTimeLeft(competition.deadline)
 
         // Separate submissions by type
         const karyaSubmissions = competitionSubmissions.filter(s => 
@@ -578,16 +611,59 @@ export function Submissions({ userData }: SubmissionsProps) {
                   <ImageIcon className="w-5 h-5 text-green-400" />
                 )}
                 {competition.title}
+                {deadlinePassed && (
+                  <Badge className="bg-red-500/20 text-red-300 border-red-500/30 ml-auto">
+                    Deadline Passed
+                  </Badge>
+                )}
+                {!deadlinePassed && timeLeft.days <= 1 && (
+                  <Badge className="bg-orange-500/20 text-orange-300 border-orange-500/30 ml-auto animate-pulse">
+                    Closing Soon!
+                  </Badge>
+                )}
               </CardTitle>
-              <CardDescription className="flex items-center gap-2">
+              <CardDescription className="flex items-center gap-2 flex-wrap">
                 <Badge className="bg-blue-500/20 text-blue-300 border-blue-500/30">
                   {competition.title}
                 </Badge>
                 <span className="text-slate-400">Upload karya dan surat pernyataan orisinalitas</span>
+                {!deadlinePassed && (
+                  <span className="text-slate-500 text-xs">
+                    • Deadline: {new Date(competition.deadline).toLocaleString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit"
+                    })}
+                  </span>
+                )}
               </CardDescription>
             </CardHeader>
 
             <CardContent className="space-y-6">
+              {/* Deadline Warning Banner */}
+              {deadlinePassed && (
+                <div className="bg-red-500/10 border-2 border-red-500/30 rounded-lg p-4">
+                  <div className="flex items-start gap-3">
+                    <AlertTriangle className="w-5 h-5 text-red-400 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <h4 className="text-red-300 font-semibold mb-1">Submission Period Closed</h4>
+                      <p className="text-red-200 text-sm">
+                        The deadline for this competition has passed. You can no longer submit new files.
+                        Deadline was: {new Date(competition.deadline).toLocaleString("en-US", {
+                          weekday: "long",
+                          year: "numeric",
+                          month: "long",
+                          day: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit"
+                        })}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Section 1: Upload Karya Utama */}
               <div className="space-y-4">
                 <div className="flex items-center gap-2 mb-4">
@@ -597,6 +673,11 @@ export function Submissions({ userData }: SubmissionsProps) {
                     <ImageIcon className="w-5 h-5 text-green-400" />
                   )}
                   <h3 className="text-white font-semibold text-lg">Upload Karya Utama</h3>
+                  {deadlinePassed && (
+                    <Badge className="bg-red-500/20 text-red-300 border-red-500/30 text-xs">
+                      Closed
+                    </Badge>
+                  )}
                 </div>
 
                 <div>
@@ -609,7 +690,7 @@ export function Submissions({ userData }: SubmissionsProps) {
                     accept={competition.accept}
                     onChange={(e) => handleFileChange(registration.competition_id, e.target.files?.[0] || null, 'main')}
                     className="bg-slate-800 border-slate-700 text-white file:bg-slate-700 file:text-white file:border-0 file:mr-4 file:py-2 file:px-4 file:rounded-md"
-                    disabled={state.isUploading}
+                    disabled={state.isUploading || deadlinePassed}
                   />
                   <p className="text-slate-400 text-sm mt-1">
                     {isPdf ? "PDF files only, max 10MB" : "JPG, PNG files only, max 10MB"}
@@ -617,17 +698,37 @@ export function Submissions({ userData }: SubmissionsProps) {
                 </div>
 
                 <div>
-                  <Label htmlFor={`desc-${registration.competition_id}`} className="text-white">
-                    Deskripsi Karya
-                  </Label>
+                  <div className="flex items-center justify-between mb-2">
+                    <Label htmlFor={`desc-${registration.competition_id}`} className="text-white">
+                      Deskripsi Karya
+                    </Label>
+                    <span className={`text-xs ${
+                      (state.description?.length || 0) > MAX_DESCRIPTION_LENGTH 
+                        ? "text-red-400 font-semibold" 
+                        : "text-slate-500"
+                    }`}>
+                      {state.description?.length || 0}/{MAX_DESCRIPTION_LENGTH}
+                    </span>
+                  </div>
                   <Textarea
                     id={`desc-${registration.competition_id}`}
                     value={state.description || ""}
                     onChange={(e) => handleInputChange(registration.competition_id, "description", e.target.value)}
                     placeholder="Contoh: 'Karya Babak Penyisihan Scientific Writing'"
-                    className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500"
-                    disabled={state.isUploading}
+                    className={`bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 ${
+                      (state.description?.length || 0) > MAX_DESCRIPTION_LENGTH 
+                        ? "border-red-500 focus:border-red-500" 
+                        : ""
+                    }`}
+                    disabled={state.isUploading || deadlinePassed}
+                    maxLength={MAX_DESCRIPTION_LENGTH + 50}
                   />
+                  {(state.description?.length || 0) > MAX_DESCRIPTION_LENGTH && (
+                    <p className="text-red-400 text-xs mt-1 flex items-center gap-1">
+                      <AlertTriangle className="w-3 h-3" />
+                      Description exceeds maximum length
+                    </p>
+                  )}
                 </div>
 
                 <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-4">
@@ -638,7 +739,7 @@ export function Submissions({ userData }: SubmissionsProps) {
                       onCheckedChange={(checked) =>
                         handleInputChange(registration.competition_id, "declarationChecked", checked as boolean)
                       }
-                      disabled={state.isUploading}
+                      disabled={state.isUploading || deadlinePassed}
                       className="mt-1"
                     />
                     <div className="space-y-1">
@@ -655,10 +756,21 @@ export function Submissions({ userData }: SubmissionsProps) {
 
                 <Button
                   onClick={() => handleSubmit(registration.competition_id, 'main')}
-                  disabled={!state.file || !state.declarationChecked || state.isUploading}
-                  className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
+                  disabled={
+                    !state.file || 
+                    !state.declarationChecked || 
+                    state.isUploading || 
+                    deadlinePassed ||
+                    (state.description?.length || 0) > MAX_DESCRIPTION_LENGTH
+                  }
+                  className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {state.isUploading ? (
+                  {deadlinePassed ? (
+                    <>
+                      <AlertTriangle className="w-4 h-4 mr-2" />
+                      Submission Closed
+                    </>
+                  ) : state.isUploading ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                       Uploading Karya...
@@ -679,6 +791,11 @@ export function Submissions({ userData }: SubmissionsProps) {
                 <div className="flex items-center gap-2 mb-4">
                   <FileCheck className="w-5 h-5 text-green-400" />
                   <h3 className="text-white font-semibold text-lg">Upload Surat Pernyataan Orisinalitas</h3>
+                  {deadlinePassed && (
+                    <Badge className="bg-red-500/20 text-red-300 border-red-500/30 text-xs">
+                      Closed
+                    </Badge>
+                  )}
                 </div>
 
                 <div>
@@ -691,7 +808,7 @@ export function Submissions({ userData }: SubmissionsProps) {
                     accept=".pdf"
                     onChange={(e) => handleFileChange(registration.competition_id, e.target.files?.[0] || null, 'declaration')}
                     className="bg-slate-800 border-slate-700 text-white file:bg-slate-700 file:text-white file:border-0 file:mr-4 file:py-2 file:px-4 file:rounded-md"
-                    disabled={state.isUploadingDeclaration}
+                    disabled={state.isUploadingDeclaration || deadlinePassed}
                   />
                   <p className="text-slate-400 text-sm mt-1">
                     PDF files only, max 10MB - Surat pernyataan orisinalitas yang sudah ditandatangani
@@ -699,17 +816,37 @@ export function Submissions({ userData }: SubmissionsProps) {
                 </div>
 
                 <div>
-                  <Label htmlFor={`declaration-desc-${registration.competition_id}`} className="text-white">
-                    Deskripsi Surat Pernyataan
-                  </Label>
+                  <div className="flex items-center justify-between mb-2">
+                    <Label htmlFor={`declaration-desc-${registration.competition_id}`} className="text-white">
+                      Deskripsi Surat Pernyataan
+                    </Label>
+                    <span className={`text-xs ${
+                      (state.declarationDescription?.length || 0) > MAX_DECLARATION_DESC_LENGTH 
+                        ? "text-red-400 font-semibold" 
+                        : "text-slate-500"
+                    }`}>
+                      {state.declarationDescription?.length || 0}/{MAX_DECLARATION_DESC_LENGTH}
+                    </span>
+                  </div>
                   <Input
                     id={`declaration-desc-${registration.competition_id}`}
                     value={state.declarationDescription || ""}
                     onChange={(e) => handleInputChange(registration.competition_id, "declarationDescription", e.target.value)}
                     placeholder="Surat Pernyataan Orisinalitas"
-                    className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500"
-                    disabled={state.isUploadingDeclaration}
+                    className={`bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 ${
+                      (state.declarationDescription?.length || 0) > MAX_DECLARATION_DESC_LENGTH 
+                        ? "border-red-500 focus:border-red-500" 
+                        : ""
+                    }`}
+                    disabled={state.isUploadingDeclaration || deadlinePassed}
+                    maxLength={MAX_DECLARATION_DESC_LENGTH + 20}
                   />
+                  {(state.declarationDescription?.length || 0) > MAX_DECLARATION_DESC_LENGTH && (
+                    <p className="text-red-400 text-xs mt-1 flex items-center gap-1">
+                      <AlertTriangle className="w-3 h-3" />
+                      Description exceeds maximum length
+                    </p>
+                  )}
                 </div>
 
                 <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-4">
@@ -727,10 +864,20 @@ export function Submissions({ userData }: SubmissionsProps) {
 
                 <Button
                   onClick={() => handleSubmit(registration.competition_id, 'declaration')}
-                  disabled={!state.declarationFile || state.isUploadingDeclaration}
-                  className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white"
+                  disabled={
+                    !state.declarationFile || 
+                    state.isUploadingDeclaration || 
+                    deadlinePassed ||
+                    (state.declarationDescription?.length || 0) > MAX_DECLARATION_DESC_LENGTH
+                  }
+                  className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {state.isUploadingDeclaration ? (
+                  {deadlinePassed ? (
+                    <>
+                      <AlertTriangle className="w-4 h-4 mr-2" />
+                      Submission Closed
+                    </>
+                  ) : state.isUploadingDeclaration ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                       Uploading Surat Pernyataan...
