@@ -5,8 +5,8 @@ import { supabaseAdmin } from "@/lib/supabase"
 import cloudinary from "@/lib/cloudinary"
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10 MB
-const MAX_DESCRIPTION_LENGTH = 500 // characters
-const MAX_DECLARATION_DESC_LENGTH = 200 // characters
+const MAX_DESCRIPTION_LENGTH = 100 // characters
+const MAX_DECLARATION_DESC_LENGTH = 100 // characters
 
 // Allowed file types per competition
 const ALLOWED_TYPES: Record<string, string[]> = {
@@ -17,9 +17,9 @@ const ALLOWED_TYPES: Record<string, string[]> = {
 
 // Competition deadlines
 const COMPETITION_DEADLINES: Record<string, string> = {
-  "3d4e5cca-cf3d-45d7-8849-2a614b82f4d4": "2025-09-29T23:59:59",
-  "43ec1f50-2102-4a4b-995b-e33e61505b22": "2025-09-30T23:59:59",
-  "331aeb0c-8851-4638-aa34-6502952f098b": "2025-09-30T23:59:59",
+  "3d4e5cca-cf3d-45d7-8849-2a614b82f4d4": "2025-10-10T23:59:59",
+  "43ec1f50-2102-4a4b-995b-e33e61505b22": "2025-10-15T23:59:59",
+  "331aeb0c-8851-4638-aa34-6502952f098b": "2025-10-25T23:59:59",
 }
 
 export async function GET() {
@@ -66,7 +66,7 @@ export async function POST(req: Request) {
     // Check deadline
     const deadline = COMPETITION_DEADLINES[competitionId]
     if (deadline && new Date() > new Date(deadline)) {
-      return NextResponse.json({ error: "Submission deadline has passed" }, { status: 403 })
+      return NextResponse.json({ error: "Deadline sudah terlewat" }, { status: 403 })
     }
 
     // Validate description length
@@ -76,12 +76,12 @@ export async function POST(req: Request) {
     
     if (description && description.length > maxDescLength) {
       return NextResponse.json({ 
-        error: `Description too long. Maximum ${maxDescLength} characters allowed.` 
+        error: `Judul terlalu panjang. Maks ${maxDescLength} karakter diperbolehkan.` 
       }, { status: 400 })
     }
 
     if (file.size > MAX_FILE_SIZE) {
-      return NextResponse.json({ error: "File size must be < 10MB" }, { status: 400 })
+      return NextResponse.json({ error: "Ukuran file harus < 10MB" }, { status: 400 })
     }
 
     // For surat_pernyataan, always allow PDF
