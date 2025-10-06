@@ -767,7 +767,7 @@ export function CompetitionDetails({ userData }: CompetitionDetailsProps) {
                           </h3>
                         {/* Username */}
                         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-                          <span className="text-slate-400 mb-1 sm:mb-0">Username</span>
+                          <span className="text-slate-400 mb-1 sm:mb-0">Email</span>
                           <div className="flex items-center gap-2 bg-slate-800/50 p-2 rounded-md">
                             <span className="text-white font-mono">{cbtAccount.cbt_username}</span>
                             <Button
@@ -834,7 +834,7 @@ export function CompetitionDetails({ userData }: CompetitionDetailsProps) {
                           </p>
                           {/* Username */}
                           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-                            <span className="text-slate-400 mb-1 sm:mb-0">Username CBT</span>
+                            <span className="text-slate-400 mb-1 sm:mb-0">Email CBT</span>
                             <div className="flex items-center gap-2 bg-slate-900/70 p-2 rounded-md">
                               <span className="text-white font-mono text-sm">{account.cbt_username}</span>
                               <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleCopy(account.cbt_username, "Username")}>
