@@ -1,3 +1,5 @@
+// components\dashboard\competition-details.tsx
+
 "use client"
 import { useState, useEffect, ChangeEvent } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -19,10 +21,27 @@ import {
   Lock,
   MapPin,
   Upload,
-  ImageIcon, // <-- Pastikan ikon ini diimpor
+  ImageIcon,
+  KeyRound,
+  Copy,
+  Eye,
+  EyeOff,
+  Users// <-- Pastikan ikon ini diimpor
 } from "lucide-react"
 
-// ... (Interface dan state lainnya tetap sama) ...
+// Interface untuk data akun tim dari API baru
+interface TeamAccount {
+  team_member_name: string;
+  cbt_username: string;
+  cbt_password: string;
+}
+
+interface CbtAccount {
+  cbt_username: string
+  cbt_password: string
+  education_level: string
+  participant_code: string
+}
 
 interface UserData {
   id: string
@@ -59,32 +78,72 @@ export function CompetitionDetails({ userData }: CompetitionDetailsProps) {
   const [isLoading, setIsLoading] = useState(true)
   const [reuploadFile, setReuploadFile] = useState<File | null>(null)
   const [isReuploading, setIsReuploading] = useState(false)
+  const [cbtAccount, setCbtAccount] = useState<CbtAccount | null>(null)
+  const [showPassword, setShowPassword] = useState(false)
+  const [lccTeamAccounts, setLccTeamAccounts] = useState<Record<string, TeamAccount[]>>({})
   const { toast } = useToast()
 
   useEffect(() => {
     fetchData()
   }, [])
 
-  const fetchData = async () => {
+      const fetchData = async () => {
     try {
-      const registrationsResponse = await fetch("/api/users/registrations")
-      if (registrationsResponse.ok) {
-        const { registrations } = await registrationsResponse.json()
-        setRegistrations(registrations)
+      const [regRes, compRes] = await Promise.all([
+        fetch("/api/users/registrations"),
+        fetch("/api/competitions")
+      ]);
+
+      const { registrations: fetchedRegistrations = [] } = await regRes.json();
+      const { competitions: fetchedCompetitions = [] } = await compRes.json();
+      
+      setRegistrations(fetchedRegistrations);
+      setCompetitions(fetchedCompetitions);
+
+      // --- LOGIKA UNTUK PHYSICS COMPETITION (TIDAK DIUBAH) ---
+      const pcRegistration = fetchedRegistrations.find((reg: Registration) =>
+        reg.status === "approved" &&
+        fetchedCompetitions.find((c: Competition) => c.id === reg.competition_id)?.title === "Physics Competition"
+      );
+
+      if (pcRegistration) {
+        console.log("Found approved Physics Competition registration, fetching account...");
+        const cbtResponse = await fetch("/api/users/cbt-account");
+        if (cbtResponse.ok) {
+          const { cbtAccount } = await cbtResponse.json();
+          setCbtAccount(cbtAccount);
+        }
       }
 
-      const competitionsResponse = await fetch("/api/competitions")
-      if (competitionsResponse.ok) {
-        const { competitions } = await competitionsResponse.json()
-        setCompetitions(competitions)
+      // --- TAMBAHAN LANGKAH 2: Logika baru untuk Lomba Cerdas Cermat ---
+      const lccRegistration = fetchedRegistrations.find((reg: Registration) => {
+        const competition = fetchedCompetitions.find((c: Competition) => c.id === reg.competition_id);
+        return reg.status === "approved" && competition?.title === "Cerdas Cermat";
+      });
+
+      if (lccRegistration) {
+        console.log("Found approved LCC registration, fetching team accounts...");
+        const teamAccountsRes = await fetch(`/api/users/cbt-team-account?competitionId=${lccRegistration.competition_id}`);
+        
+        if (teamAccountsRes.ok) {
+          const { teamAccounts } = await teamAccountsRes.json();
+          setLccTeamAccounts(prev => ({
+            ...prev,
+            [lccRegistration.id]: teamAccounts
+          }));
+        } else {
+          console.warn("Failed to fetch LCC team accounts for registration:", lccRegistration.id);
+        }
       }
+      // --- AKHIR BLOK TAMBAHAN ---
+
     } catch (error) {
       console.error("Error fetching data:", error)
     } finally {
       setIsLoading(false)
     }
   }
-  
+
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setReuploadFile(e.target.files[0])
@@ -439,6 +498,14 @@ export function CompetitionDetails({ userData }: CompetitionDetailsProps) {
 
   const hasApprovedRegistration = registrations.some((reg: any) => reg.status === "approved")
 
+   const handleCopy = (text: string, fieldName: string) => {
+    navigator.clipboard.writeText(text)
+    toast({
+      title: "Berhasil Disalin!",
+      description: `${fieldName} telah disalin ke clipboard.`,
+    })
+  }
+
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -526,6 +593,7 @@ export function CompetitionDetails({ userData }: CompetitionDetailsProps) {
               const statusBadge = getStatusBadge(registration.status)
               const StatusIcon = statusBadge.icon
               const nextSteps = getNextSteps(registration.status)
+              const teamAccounts = lccTeamAccounts[registration.id];
 
               return (
                 <Card key={registration.id} className="bg-slate-900/50 border-slate-700">
@@ -689,6 +757,118 @@ export function CompetitionDetails({ userData }: CompetitionDetailsProps) {
                         </div>
                       </div>
                     )}
+                  {registration.status === 'approved' &&
+                    competition?.title === 'Physics Competition' &&
+                    cbtAccount && (
+                      <div className="mt-4 pt-4 border-t border-slate-700/50 space-y-4">
+                         <h3 className="text-white font-semibold flex items-center gap-2">
+                            <KeyRound className="w-4 h-4 text-amber-400" />
+                            Informasi Akun CBT
+                          </h3>
+                        {/* Username */}
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                          <span className="text-slate-400 mb-1 sm:mb-0">Username</span>
+                          <div className="flex items-center gap-2 bg-slate-800/50 p-2 rounded-md">
+                            <span className="text-white font-mono">{cbtAccount.cbt_username}</span>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7"
+                              onClick={() => handleCopy(cbtAccount.cbt_username, "Username")}
+                            >
+                              <Copy className="w-4 h-4 text-slate-400" />
+                            </Button>
+                          </div>
+                        </div>
+                        {/* Password */}
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                          <span className="text-slate-400 mb-1 sm:mb-0">Password</span>
+                          <div className="flex items-center gap-2 bg-slate-800/50 p-2 rounded-md">
+                            <span className="text-white font-mono">
+                              {showPassword ? cbtAccount.cbt_password : "••••••••"}
+                            </span>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7"
+                              onClick={() => setShowPassword(!showPassword)}
+                            >
+                              {showPassword ? (
+                                <EyeOff className="w-4 h-4 text-slate-400" />
+                              ) : (
+                                <Eye className="w-4 h-4 text-slate-400" />
+                              )}
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7"
+                              onClick={() => handleCopy(cbtAccount.cbt_password, "Password")}
+                            >
+                              <Copy className="w-4 h-4 text-slate-400" />
+                            </Button>
+                          </div>
+                        </div>
+
+                        <div className="pt-4 flex justify-end">
+                          <a href="https://prfxiii.sibiti.co.id/" target="_blank" rel="noopener noreferrer">
+                            <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white">
+                              <ExternalLink className="w-4 h-4 mr-2" />
+                              Buka Halaman CBT
+                            </Button>
+                          </a>
+                        </div>
+                      </div>
+                  )}
+                  {competition?.title === 'Cerdas Cermat' && teamAccounts && teamAccounts.length > 0 && (
+                    <div className="mt-4 pt-6 border-t border-slate-700/50 space-y-6">
+                      <h3 className="text-white font-semibold flex items-center gap-3 text-lg">
+                        <Users className="w-5 h-5 text-amber-400" />
+                        Informasi Akun CBT Tim - Cerdas Cermat
+                      </h3>
+
+                      {teamAccounts.map((account: TeamAccount) => (
+                        <div key={account.cbt_username} className="bg-slate-800/50 p-4 rounded-lg space-y-3">
+                          <p className="text-sm font-medium text-slate-300 border-b border-slate-700 pb-2 mb-3">
+                            Anggota Tim: <span className="font-bold text-white">{account.team_member_name}</span>
+                          </p>
+                          {/* Username */}
+                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                            <span className="text-slate-400 mb-1 sm:mb-0">Username CBT</span>
+                            <div className="flex items-center gap-2 bg-slate-900/70 p-2 rounded-md">
+                              <span className="text-white font-mono text-sm">{account.cbt_username}</span>
+                              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleCopy(account.cbt_username, "Username")}>
+                                <Copy className="w-4 h-4 text-slate-400" />
+                              </Button>
+                            </div>
+                          </div>
+                          {/* Password */}
+                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                            <span className="text-slate-400 mb-1 sm:mb-0">Password CBT</span>
+                            <div className="flex items-center gap-2 bg-slate-900/70 p-2 rounded-md">
+                              <span className="text-white font-mono text-sm">
+                                {showPassword ? account.cbt_password : "••••••••"}
+                              </span>
+                              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setShowPassword(!showPassword)}>
+                                {showPassword ? <EyeOff className="w-4 h-4 text-slate-400" /> : <Eye className="w-4 h-4 text-slate-400" />}
+                              </Button>
+                              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleCopy(account.cbt_password, "Password")}>
+                                <Copy className="w-4 h-4 text-slate-400" />
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                        <div className="pt-4 flex justify-end">
+                          <a href="https://prfxiii.sibiti.co.id/" target="_blank" rel="noopener noreferrer">
+                            <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white">
+                              <ExternalLink className="w-4 h-4 mr-2" />
+                              Buka Halaman CBT
+                            </Button>
+                          </a>
+                        </div>
                   </CardContent>
                 </Card>
               )
