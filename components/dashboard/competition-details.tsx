@@ -857,18 +857,18 @@ export function CompetitionDetails({ userData }: CompetitionDetailsProps) {
                               </Button>
                             </div>
                           </div>
+                            <div className="pt-4 flex justify-end">
+                            <a href="https://prfxiii.sibiti.co.id/" target="_blank" rel="noopener noreferrer">
+                              <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white">
+                                <ExternalLink className="w-4 h-4 mr-2" />
+                                Buka Halaman CBT
+                              </Button>
+                            </a>
+                          </div>
                         </div>
                       ))}
                     </div>
                   )}
-                        <div className="pt-4 flex justify-end">
-                          <a href="https://prfxiii.sibiti.co.id/" target="_blank" rel="noopener noreferrer">
-                            <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white">
-                              <ExternalLink className="w-4 h-4 mr-2" />
-                              Buka Halaman CBT
-                            </Button>
-                          </a>
-                        </div>
                   </CardContent>
                 </Card>
               )
