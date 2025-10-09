@@ -77,14 +77,14 @@ const NEXT_STAGE_CONFIG: Record<string, Competition> = {
     deadline: "2025-10-10T23:59:59",
     description: "Babak Semifinal"
   },
-  "43ec1f50-2102-4a4b-995b-e33e61505b22": {
-    id: "43ec1f50-2102-4a4b-995b-e33e61505b22",
-    title: "Science Project",
-    allowedTypes: ["application/pdf"],
-    accept: ".pdf",
-    deadline: "2025-10-15T23:59:59", // Atur deadline semifinal SP di sini
-    description: "Babak Semifinal"
-  },
+    "43ec1f50-2102-4a4b-995b-e33e61505b22": { 
+    id: "43ec1f50-2102-4a4b-995b-e33e61505b22", 
+    title: "Science Project", 
+    allowedTypes: ["video/external"], // UBAH INI
+    accept: "", // Kosongkan (tidak dipakai untuk link)
+    deadline: "2025-09-30T23:59:59", 
+    description: "Babak Penyisihan" 
+    },
   //   "331aeb0c-8851-4638-aa34-6502952f098b": {
   //   id: "331aeb0c-8851-4638-aa34-6502952f098b",
   //   title: "Depict Physics",
