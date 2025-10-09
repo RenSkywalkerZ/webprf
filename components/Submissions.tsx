@@ -77,14 +77,14 @@ const NEXT_STAGE_CONFIG: Record<string, Competition> = {
     deadline: "2025-10-10T23:59:59",
     description: "Babak Semifinal"
   },
-  // "43ec1f50-2102-4a4b-995b-e33e61505b22": {
-  //   id: "43ec1f50-2102-4a4b-995b-e33e61505b22",
-  //   title: "Science Project",
-  //   allowedTypes: ["application/pdf"],
-  //   accept: ".pdf",
-  //   deadline: "2025-10-15T23:59:59", // Atur deadline semifinal SP di sini
-  //   description: "Babak Semifinal"
-  // },
+  "43ec1f50-2102-4a4b-995b-e33e61505b22": {
+    id: "43ec1f50-2102-4a4b-995b-e33e61505b22",
+    title: "Science Project",
+    allowedTypes: ["application/pdf"],
+    accept: ".pdf",
+    deadline: "2025-10-15T23:59:59", // Atur deadline semifinal SP di sini
+    description: "Babak Semifinal"
+  },
   //   "331aeb0c-8851-4638-aa34-6502952f098b": {
   //   id: "331aeb0c-8851-4638-aa34-6502952f098b",
   //   title: "Depict Physics",
@@ -103,6 +103,7 @@ const DECLARATION_TEXT =
 // Validation constants
 const MAX_DESCRIPTION_LENGTH = 100
 const MAX_DECLARATION_DESC_LENGTH = 100
+const SCIENCE_PROJECT_ID = "43ec1f50-2102-4a4b-995b-e33e61505b22"
 
 // --- HELPER FUNCTIONS (Unchanged) ---
 const calculateTimeLeft = (deadline: string) => {
@@ -219,9 +220,18 @@ export function Submissions({ userData }: SubmissionsProps) {
 
             const initialStates: Record<string, any> = {};
             approvedRegistrations.forEach((reg: Registration) => {
-                if (NEXT_STAGE_CONFIG[reg.competition_id]) {
-                    initialStates[reg.competition_id] = { file: null, description: "", declarationFile: null, declarationDescription: "Surat Pernyataan Orisinalitas", declarationChecked: false, isUploading: false, isUploadingDeclaration: false };
-                }
+              if (NEXT_STAGE_CONFIG[reg.competition_id]) {
+                initialStates[reg.competition_id] = {
+                  file: null,
+                  videoLink: "", // Pastikan baris ini ada
+                  description: "",
+                  declarationFile: null,
+                  declarationDescription: "Surat Pernyataan Orisinalitas",
+                  declarationChecked: false,
+                  isUploading: false,
+                  isUploadingDeclaration: false,
+                };
+              }
             });
             setUploadStates(initialStates);
 
@@ -257,39 +267,77 @@ export function Submissions({ userData }: SubmissionsProps) {
         setUploadStates(prev => ({ ...prev, [competitionId]: { ...prev[competitionId], [field]: value } }));
     };
 
-    const handleSubmit = async (competitionId: string, type: 'main' | 'declaration' = 'main') => {
-        const state = uploadStates[competitionId];
-        const competition = NEXT_STAGE_CONFIG[competitionId];
-        if (!competition || !state) return;
+   const handleSubmit = async (competitionId: string, type: 'main' | 'declaration' = 'main') => {
+  const state = uploadStates[competitionId]
+  const competition = NEXT_STAGE_CONFIG[competitionId]
+  if (!competition || !state) return
 
-        const file = type === 'declaration' ? state.declarationFile : state.file;
-        const description = type === 'declaration' ? state.declarationDescription : state.description;
+  // Conditional validation
+  if (competitionId === SCIENCE_PROJECT_ID) {
+    // Validate link for Science Project
+    if (!state.videoLink || !state.videoLink.includes('drive.google.com')) {
+      toast({
+        title: "Link Tidak Valid",
+        description: "Masukkan link Google Drive yang valid",
+        variant: "destructive"
+      })
+      return
+    }
+  } else {
+    // Validate file for others
+    const file = type === 'declaration' ? state.declarationFile : state.file
+    if (!file) return
+  }
 
-        if (!file || (type === 'main' && !state.declarationChecked)) return;
-        if (isDeadlinePassed(competition.deadline)) { toast({ title: "Deadline Terlewat", description: "Periode submisi telah berakhir.", variant: "destructive" }); return; }
+  if (type === 'main' && !state.declarationChecked) return
+  if (isDeadlinePassed(competition.deadline)) {
+    toast({ title: "Deadline Terlewat", variant: "destructive" })
+    return
+  }
 
-        const uploadingField = type === 'declaration' ? 'isUploadingDeclaration' : 'isUploading';
-        setUploadStates(prev => ({ ...prev, [competitionId]: { ...prev[competitionId], [uploadingField]: true } }));
+  const uploadingField = type === 'declaration' ? 'isUploadingDeclaration' : 'isUploading'
+  setUploadStates(prev => ({ 
+    ...prev, 
+    [competitionId]: { ...prev[competitionId], [uploadingField]: true } 
+  }))
 
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append("competition_id", competitionId);
-        formData.append("description", description);
-        formData.append("submission_type", type === 'declaration' ? 'surat_pernyataan' : 'karya');
-        formData.append("declaration_checked", "true");
+  const formData = new FormData()
+  formData.append("competition_id", competitionId)
+  formData.append("description", state.description || "")
+  formData.append("submission_type", type === 'declaration' ? 'surat_pernyataan' : 'karya')
+  formData.append("declaration_checked", "true")
+  
+  // Conditional: append link OR file
+  if (competitionId === SCIENCE_PROJECT_ID && type === 'main') {
+    formData.append("video_link", state.videoLink)
+  } else {
+    const file = type === 'declaration' ? state.declarationFile : state.file
+    formData.append("file", file)
+  }
 
-        try {
-            const response = await fetch("/api/submissions", { method: "POST", body: formData });
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.error || "Gagal melakukan submit.");
-            toast({ title: "Submisi Berhasil!", description: `File Anda telah berhasil diunggah.` });
-            await fetchData();
-        } catch (error: any) {
-            toast({ title: "Submisi Gagal", description: error.message, variant: "destructive" });
-        } finally {
-            setUploadStates(prev => ({ ...prev, [competitionId]: { ...prev[competitionId], [uploadingField]: false } }));
-        }
-    };
+  try {
+    const response = await fetch("/api/submissions", { method: "POST", body: formData })
+    const data = await response.json()
+    
+    if (!response.ok) throw new Error(data.error || "Gagal submit")
+    
+    toast({ 
+      title: "Submisi Berhasil!", 
+      description: competitionId === SCIENCE_PROJECT_ID 
+        ? "Link video berhasil disimpan" 
+        : "File berhasil diunggah" 
+    })
+    
+    await fetchData()
+  } catch (error: any) {
+    toast({ title: "Submisi Gagal", description: error.message, variant: "destructive" })
+  } finally {
+    setUploadStates(prev => ({ 
+      ...prev, 
+      [competitionId]: { ...prev[competitionId], [uploadingField]: false } 
+    }))
+  }
+} 
 
     const handleDelete = async (submission: Submission) => {
         if (!confirm("Anda yakin ingin menghapus submisi ini? Tindakan ini tidak dapat diurungkan.")) return;
@@ -353,7 +401,66 @@ export function Submissions({ userData }: SubmissionsProps) {
                                 </CardHeader>
                                 <CardContent className="space-y-6">
                                     {deadlinePassed && (<div className="bg-red-500/10 border-2 border-red-500/30 rounded-lg p-4"><div className="flex items-start gap-3"><AlertTriangle className="w-5 h-5 text-red-400 mt-0.5 flex-shrink-0" /><div><h4 className="text-red-300 font-semibold mb-1">Submission Period Closed</h4><p className="text-red-200 text-sm">The deadline for this competition has passed. You can no longer submit new files.</p></div></div></div>)}
-                                    <div className="space-y-4"><div className="flex items-center gap-2 mb-4">{isPdf ? (<FileText className="w-5 h-5 text-blue-400" />) : (<ImageIcon className="w-5 h-5 text-green-400" />)}<h3 className="text-white font-semibold text-lg">Upload Karya Utama</h3>{deadlinePassed && (<Badge className="bg-red-500/20 text-red-300 border-red-500/30 text-xs">Closed</Badge>)}</div><div><Label htmlFor={`file-${registration.competition_id}`} className="text-white">File Karya <span className="text-red-500">*</span></Label><Input id={`file-${registration.competition_id}`} type="file" accept={competition.accept} onChange={(e) => handleFileChange(registration.competition_id, e.target.files?.[0] || null, 'main')} className="bg-slate-800 border-slate-700 text-white file:bg-slate-700 file:text-white file:border-0 file:mr-4 file:py-2 file:px-4 file:rounded-md" disabled={state.isUploading || deadlinePassed} /><p className="text-slate-400 text-sm mt-1">{isPdf ? "Format PDF, maks. 10MB" : "Format JPG, PNG maks. 10MB"}</p></div><div><div className="flex items-center justify-between mb-2"><Label htmlFor={`desc-${registration.competition_id}`} className="text-white">Judul Karya</Label><span className={`text-xs ${(state.description?.length || 0) > MAX_DESCRIPTION_LENGTH ? "text-red-400 font-semibold" : "text-slate-500"}`}>{state.description?.length || 0}/{MAX_DESCRIPTION_LENGTH}</span></div><Textarea id={`desc-${registration.competition_id}`} value={state.description || ""} onChange={(e) => handleInputChange(registration.competition_id, "description", e.target.value)} placeholder="Contoh: 'Karya Babak Semifinal Scientific Writing'" className={`bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 ${(state.description?.length || 0) > MAX_DESCRIPTION_LENGTH ? "border-red-500 focus:border-red-500" : ""}`} disabled={state.isUploading || deadlinePassed} maxLength={MAX_DESCRIPTION_LENGTH + 50} />{(state.description?.length || 0) > MAX_DESCRIPTION_LENGTH && (<p className="text-red-400 text-xs mt-1 flex items-center gap-1"><AlertTriangle className="w-3 h-3" />Judul terlalu panjang, maks {MAX_DESCRIPTION_LENGTH} kata</p>)}</div><div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-4"><div className="flex items-start space-x-3"><Checkbox id={`declaration-${registration.competition_id}`} checked={state.declarationChecked || false} onCheckedChange={(checked) => handleInputChange(registration.competition_id, "declarationChecked", checked as boolean)} disabled={state.isUploading || deadlinePassed} className="mt-1" /><div className="space-y-1"><Label htmlFor={`declaration-${registration.competition_id}`} className="text-amber-200 font-medium cursor-pointer">Setujui Pernyataan <span className="text-red-500">*</span></Label><p className="text-amber-100 text-sm leading-relaxed">{DECLARATION_TEXT}</p></div></div></div><Button onClick={() => handleSubmit(registration.competition_id, 'main')} disabled={!state.file || !state.declarationChecked || state.isUploading || deadlinePassed} className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white disabled:opacity-50 disabled:cursor-not-allowed">{deadlinePassed ? (<><AlertTriangle className="w-4 h-4 mr-2" />Submission Closed</>) : state.isUploading ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" />Uploading Karya...</>) : (<><Upload className="w-4 h-4 mr-2" />Submit Karya</>)}</Button></div>
+                                    <div className="space-y-4"><div className="flex items-center gap-2 mb-4">{isPdf ? (<FileText className="w-5 h-5 text-blue-400" />) : (<ImageIcon className="w-5 h-5 text-green-400" />)}<h3 className="text-white font-semibold text-lg">Upload Karya Utama</h3>{deadlinePassed && (<Badge className="bg-red-500/20 text-red-300 border-red-500/30 text-xs">Closed</Badge>)}</div>{competition_id === SCIENCE_PROJECT_ID ? (
+  // === SCIENCE PROJECT: LINK INPUT ===
+  <>
+    <div>
+      <Label htmlFor={`video-link-${competition_id}`} className="text-white">
+        Link Video Google Drive <span className="text-red-500">*</span>
+      </Label>
+      <Input
+        id={`video-link-${competition_id}`}
+        type="url"
+        placeholder="https://drive.google.com/file/d/..."
+        value={state.videoLink || ""}
+        onChange={(e) => handleInputChange(competition_id, "videoLink", e.target.value)}
+        className="bg-slate-800 border-slate-700 text-white"
+        disabled={state.isUploading || deadlinePassed}
+      />
+      <div className="mt-2 space-y-2">
+        <p className="text-slate-400 text-sm">
+          💡 Upload video Anda ke Google Drive, set permission "Anyone with the link",
+           lalu paste link-nya di sini.
+        </p>
+        <details className="text-slate-400 text-xs">
+          <summary className="cursor-pointer hover:text-slate-300">
+            📖 Cara upload ke Google Drive →
+          </summary>
+          <ol className="list-decimal ml-5 mt-2 space-y-1 text-slate-500">
+            <li>Upload video ke Google Drive Anda</li>
+            <li>Klik kanan pada video → Get link / Bagikan</li>
+            <li>Ubah permission ke "Anyone with the link can view"</li>
+            <li>Copy link dan paste di form ini</li>
+          </ol>
+        </details>
+      </div>
+    </div>
+  </>
+) : (
+  // === OTHER COMPETITIONS: FILE UPLOAD ===
+  <>
+    <div>
+      <Label htmlFor={`file-${competition_id}`} className="text-white">
+        File Karya <span className="text-red-500">*</span>
+      </Label>
+      <Input
+        id={`file-${competition_id}`}
+        type="file"
+        accept={competition.accept}
+        onChange={(e) => handleFileChange(competition_id, e.target.files?.[0] || null, 'main')}
+        className="bg-slate-800 border-slate-700 text-white file:bg-slate-700 file:text-white file:border-0 file:mr-4 file:py-2 file:px-4 file:rounded-md"
+        disabled={state.isUploading || deadlinePassed}
+      />
+      <p className="text-slate-400 text-sm mt-1">
+        {isPdf ? "Format PDF, maks. 10MB" : "Format JPG, PNG maks. 10MB"}
+      </p>
+    </div>
+  </>
+)}<div><div className="flex items-center justify-between mb-2"><Label htmlFor={`desc-${registration.competition_id}`} className="text-white">Judul Karya</Label><span className={`text-xs ${(state.description?.length || 0) > MAX_DESCRIPTION_LENGTH ? "text-red-400 font-semibold" : "text-slate-500"}`}>{state.description?.length || 0}/{MAX_DESCRIPTION_LENGTH}</span></div><Textarea id={`desc-${registration.competition_id}`} value={state.description || ""} onChange={(e) => handleInputChange(registration.competition_id, "description", e.target.value)} placeholder="Contoh: 'Karya Babak Semifinal Scientific Writing'" className={`bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 ${(state.description?.length || 0) > MAX_DESCRIPTION_LENGTH ? "border-red-500 focus:border-red-500" : ""}`} disabled={state.isUploading || deadlinePassed} maxLength={MAX_DESCRIPTION_LENGTH + 50} />{(state.description?.length || 0) > MAX_DESCRIPTION_LENGTH && (<p className="text-red-400 text-xs mt-1 flex items-center gap-1"><AlertTriangle className="w-3 h-3" />Judul terlalu panjang, maks {MAX_DESCRIPTION_LENGTH} kata</p>)}</div><div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-4"><div className="flex items-start space-x-3"><Checkbox id={`declaration-${registration.competition_id}`} checked={state.declarationChecked || false} onCheckedChange={(checked) => handleInputChange(registration.competition_id, "declarationChecked", checked as boolean)} disabled={state.isUploading || deadlinePassed} className="mt-1" /><div className="space-y-1"><Label htmlFor={`declaration-${registration.competition_id}`} className="text-amber-200 font-medium cursor-pointer">Setujui Pernyataan <span className="text-red-500">*</span></Label><p className="text-amber-100 text-sm leading-relaxed">{DECLARATION_TEXT}</p></div></div></div><Button onClick={() => handleSubmit(registration.competition_id, 'main')} disabled={
+    competition_id === SCIENCE_PROJECT_ID
+      ? !state.videoLink || !state.declarationChecked || state.isUploading || deadlinePassed
+      : !state.file || !state.declarationChecked || state.isUploading || deadlinePassed
+  } className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white disabled:opacity-50 disabled:cursor-not-allowed">{deadlinePassed ? (<><AlertTriangle className="w-4 h-4 mr-2" />Submission Closed</>) : state.isUploading ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" />Uploading Karya...</>) : (<><Upload className="w-4 h-4 mr-2" />Submit Karya</>)}</Button></div>
                                     <Separator className="bg-slate-600" />
                                     <div className="space-y-4">
                                         <div className="flex items-center gap-2 mb-4"><FileCheck className="w-5 h-5 text-green-400" /><h3 className="text-white font-semibold text-lg">Upload Surat Pernyataan Orisinalitas</h3>{deadlinePassed && (<Badge className="bg-red-500/20 text-red-300 border-red-500/30 text-xs">Closed</Badge>)}</div>
