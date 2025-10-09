@@ -82,7 +82,7 @@ const NEXT_STAGE_CONFIG: Record<string, Competition> = {
     title: "Science Project", 
     allowedTypes: ["video/external"], // UBAH INI
     accept: "", // Kosongkan (tidak dipakai untuk link)
-    deadline: "2025-09-30T23:59:59", 
+    deadline: "2025-10-15T23:59:59", 
     description: "Babak Penyisihan" 
     },
   //   "331aeb0c-8851-4638-aa34-6502952f098b": {
