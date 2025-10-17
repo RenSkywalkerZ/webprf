@@ -10,12 +10,13 @@ const MAX_DECLARATION_DESC_LENGTH = 100 // characters
 
 // Science Project ID constant
 const SCIENCE_PROJECT_ID = "43ec1f50-2102-4a4b-995b-e33e61505b22"
+const DEPICT_PHYSICS_ID = "331aeb0c-8851-4638-aa34-6502952f098b"
 
 // Allowed file types per competition
 const ALLOWED_TYPES: Record<string, string[]> = {
   "3d4e5cca-cf3d-45d7-8849-2a614b82f4d4": ["application/pdf"], // Scientific Writing
   "43ec1f50-2102-4a4b-995b-e33e61505b22": ["video/external"], // Science Project (Google Drive Link)
-  "331aeb0c-8851-4638-aa34-6502952f098b": ["image/jpeg", "image/jpg", "image/png"], // Depict Physics
+  "331aeb0c-8851-4638-aa34-6502952f098b": ["video/external"], // Depict Physics
 }
 
 // Competition deadlines
@@ -97,7 +98,7 @@ export async function POST(req: Request) {
 
     // === CONDITIONAL FLOW: Science Project (Link) vs Others (File Upload) ===
     
-    if (competitionId === SCIENCE_PROJECT_ID && submissionType === "karya") {
+    if ((competitionId === SCIENCE_PROJECT_ID || competitionId === DEPICT_PHYSICS_ID) && submissionType === "karya") {
       // ============================================
       // FLOW A: SCIENCE PROJECT - GOOGLE DRIVE LINK
       // ============================================
@@ -110,11 +111,10 @@ export async function POST(req: Request) {
         }, { status: 400 })
       }
       
-      // Validasi format Google Drive link
-      const gdriveLinkPattern = /^https:\/\/drive\.google\.com\/(file\/d\/[\w-]+|open\?id=[\w-]+)/
+      const gdriveLinkPattern = /^https:\/\/drive\.google\.com\/(file\/d\/[\w-]+|open\?id=[\w-]+|drive\/folders\/[\w-]+)/
       if (!gdriveLinkPattern.test(videoLink)) {
         return NextResponse.json({ 
-          error: "Format link Google Drive tidak valid. Gunakan link sharing dari Google Drive." 
+          error: "Format link Google Drive tidak valid. Gunakan link berbagi dari Google Drive (file atau folder)." 
         }, { status: 400 })
       }
       
