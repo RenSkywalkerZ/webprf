@@ -108,4 +108,66 @@ export const hotelsData: Hotel[] = [
       { type: "Deluxe Room", priceRange: "Rp. 600,000 - Rp. 750,000" },
     ],
   },
+  {
+    name: "RedLiving Apartemen",
+    distance: "8.2 km",
+    mapsUrl: "https://maps.app.goo.gl/AMc7KchHTMckAAyN9",
+    rooms: [
+      { type: "Bedroom Studio Apartment", priceRange: "Rp. 295,000 - Rp. 385,000" },
+      { type: "Double Studio", priceRange: "Rp. 315,000 - Rp. 385,000" },
+    ],
+  },
+  {
+    name: "IRoom Margonda Residence 345",
+    distance: "8.7 km",
+    mapsUrl: "https://maps.app.goo.gl/JErpBMeydoV82qH8A",
+    rooms: [
+      { type: "Studio Apartment", priceRange: "Rp. 160,000 - Rp. 205,000" },
+      { type: "Standard", priceRange: "Rp. 210,000 - Rp. 255,000" },
+      { type: "Standard Studio", priceRange: "Rp. 410,000 - Rp. 500,000" },
+      { type: "Economy Studio", priceRange: "Rp. 490,000 - Rp. 600,000" },
+      { type: "Bussiness Studio", priceRange: "Rp. 575,000 - Rp. 700,000" },
+    ],
+  },
+  {
+    name: "favehotel margonda - depok",
+    distance: "8.5 km",
+    mapsUrl: "https://maps.app.goo.gl/wCKDqbDS8HnNLFDx9",
+    rooms: [
+      { type: "Faveroom", priceRange: "Rp. 390,000 - Rp. 450,000" },
+      { type: "Standard Room", priceRange: "Rp. 395,000 - Rp. 460,000" },
+    ],
+  },
+  {
+    name: "DNA Apartment Margonda Residence 2",
+    distance: "6 km",
+    mapsUrl: "https://maps.app.goo.gl/SPpRWdzLwTFWKFba8",
+    rooms: [
+      { type: "Cozy Apartemen Margonda Residence", priceRange: "Rp. 160,000 - Rp. 215,000" },
+      { type: "Dna Beautiful", priceRange: "Rp. 160,000 - Rp. 215,000" },
+      { type: "Sweet Rooms", priceRange: "Rp. 160,000 - Rp. 215,000" },
+    ],
+  },
+  {
+    name: "Koolkost near Margo City",
+    distance: "5.3 km",
+    mapsUrl: "https://maps.app.goo.gl/8sXsK14XQ5eP7KREA",
+    rooms: [
+      { type: "Single Room", priceRange: "Rp. 65,000 - Rp. 80,000" },
+      { type: "Twin Room", priceRange: "Rp. 95,000 - Rp. 120,000" },
+      { type: "Single Standard Room", priceRange: "Rp. 100,000 - Rp. 125,000" },
+      { type: "Twin Standard Room", priceRange: "Rp. 100,000 - Rp. 125,000" },
+      { type: "Standard Room", priceRange: "Rp. 120,000 - Rp. 150,000" },
+      { type: "Double Standard Room", priceRange: "Rp. 125,000 - Rp. 160,000" },
+    ],
+  },
+  {
+    name: "Koolkost near Universitas Indonesia",
+    distance: "2 km",
+    mapsUrl: "https://maps.app.goo.gl/UJwhq3astGkbJY736",
+    rooms: [
+      { type: "Queen Standard Room", priceRange: "Rp. 205,000 - Rp. 255,000" },
+      { type: "Double Standard Room", priceRange: "Rp. 205,000 - Rp. 250,000" },
+    ],
+  },
 ]
