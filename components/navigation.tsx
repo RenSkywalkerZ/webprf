@@ -3,7 +3,7 @@ import { useState } from "react"
 import type React from "react"
 
 import { Button } from "@/components/ui/button"
-import { BookOpen, MapPin, Menu, X, Clock, Trophy } from "lucide-react"
+import { MapPin, Menu, X, Clock, Trophy } from "lucide-react"
 
 export function Navigation() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -61,6 +61,13 @@ export function Navigation() {
               <Trophy size={16} />
               <span>Events</span>
             </a>
+            <a
+              href="/hotels"
+              className="flex items-center space-x-2 text-white/90 hover:text-white transition-colors text-sm font-medium"
+            >
+              <MapPin size={16} />
+              <span>Hotels</span>
+            </a>
           </div>
 
           {/* Mobile Menu Button */}
@@ -110,6 +117,13 @@ export function Navigation() {
               >
                 <Trophy size={16} />
                 <span>Events</span>
+              </a>
+              <a
+                href="/hotels"
+                className="flex items-center space-x-2 text-white/90 hover:text-white transition-colors text-sm font-medium py-2"
+              >
+                <MapPin size={16} />
+                <span>Hotels</span>
               </a>
               <Button
                 onClick={handleAuthRedirect}
